@@ -1,51 +1,111 @@
-# [Traccar](https://www.traccar.org)
+# traccar-sse
 
-## Overview
+> **Unofficial derivative of [traccar/traccar](https://github.com/traccar/traccar)**  
+> This repository extends the Traccar GPS tracking server with **Server-Sent Events (SSE)** support for real-time data dissemination.  
+> It is an independent project and is **not affiliated with nor endorsed by the Traccar maintainers**.
 
-Traccar is an open source GPS tracking system. This repository contains Java-based back-end service. It supports more than 200 GPS protocols and more than 2000 models of GPS tracking devices. Traccar can be used with any major SQL database system. It also provides easy to use [REST API](https://www.traccar.org/traccar-api/).
+---
 
-Other parts of Traccar solution include:
+## Abstract
 
-- [Traccar web app](https://github.com/traccar/traccar-web)
-- [Traccar Manager app](https://github.com/traccar/traccar-manager)
+This project presents a modification of the Traccar GPS tracking server aimed at
+introducing **Server-Sent Events (SSE)** as a mechanism for real-time, server-to-client
+data streaming. The proposed extension enables continuous delivery of position updates
+over standard HTTP connections, providing an alternative to polling-based approaches
+and bidirectional communication models such as WebSockets.
 
-There is also a set of mobile apps that you can use for tracking mobile devices:
+---
 
-- [Traccar Client app](https://github.com/traccar/traccar-client)
+## Motivation
 
-## Features
+Traccar provides a robust backend for GPS device communication and data storage but
+primarily exposes data to clients using request–response or duplex connection paradigms. In scenarios
+where clients don't require bidirectional communication the current tools are ineffective.
 
-Some of the available features include:
+The motivation for this fork is to investigate SSE as a lightweight, unidirectional
+streaming mechanism that:
+- integrates naturally with HTTP-based architectures,
+- reduces client-side complexity,
+- avoids persistent bidirectional channels when only server-to-client updates are required.
 
-- Real-time GPS tracking
-- Driver behaviour monitoring
-- Detailed and summary reports
-- Geofencing functionality
-- Alarms and notifications
-- Account and device management
-- Email and SMS support
+---
 
-## Build
+## Scope and Contributions
 
-Please read [build from source documentation](https://www.traccar.org/build/) on the official website.
+Relative to the upstream Traccar project, this fork introduces:
 
-## Team
+- An SSE-based API for streaming real-time position updates
+- Server-side listener components integrated into Traccar’s internal update pipeline
+- Minimal modifications to existing server and build infrastructure
 
-- Anton Tananaev ([anton@traccar.org](mailto:anton@traccar.org))
-- Andrey Kunitsyn ([andrey@traccar.org](mailto:andrey@traccar.org))
+The following aspects remain unchanged:
+- Device protocol decoding
+- Data persistence and storage models
+- Core tracking and business logic
+
+This work focuses exclusively on **data dissemination**, not on device communication.
+
+---
+
+## System Architecture
+
+At a high level, the data flow is extended as follows:
+
+GPS Device
+↓
+Protocol Decoder
+↓
+Position Entity
+↓
+Data Manager / Storage
+↓
+SSE Event Dispatcher
+↓
+HTTP SSE Clients
+
+
+SSE connections are strictly **server → client** and do not participate in device
+communication or command execution.
+
+---
+
+## Relationship to Upstream Traccar
+
+This repository maintains a logical relationship with the official Traccar project:
+
+- **Forked repository:** https://github.com/traccar/traccar
+- **License:** Apache License 2.0
+- **Codebase origin:** Traccar server
+
+Upstream changes may be periodically merged or rebased. Divergence is expected where
+necessary to support SSE-related functionality.
+
+---
+
+## Project Status
+
+This project is currently considered **experimental**.
+
+- APIs may change without notice
+- No stability guarantees are provided
+- The implementation is intended for evaluation, experimentation, and extension
+
+It should not be assumed production-ready without further validation.
+
+---
 
 ## License
 
-    Apache License, Version 2.0
+This project is distributed under the **Apache License 2.0**, consistent with the
+licensing of the upstream Traccar project.
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Refer to [`LICENSE.txt`](LICENSE.txt) for full license terms.
 
-        http://www.apache.org/licenses/LICENSE-2.0
+---
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+## Disclaimer
+
+This repository is an independent derivative work based on Traccar.
+For the official Traccar project, documentation, and support, refer to:
+
+👉 https://github.com/traccar/traccar
