@@ -191,7 +191,13 @@ public class WebServer implements LifecycleObject {
                 CorsResponseFilter.class,
                 ResourceErrorHandler.class,
                 StreamWriter.class);
-        resourceConfig.packages(ServerResource.class.getPackage().getName());
+
+        // FIX: Add SSE resource package
+        resourceConfig.packages(
+                ServerResource.class.getPackage().getName(),
+                "org.traccar.api"
+        );
+
         if (resourceConfig.getClasses().stream().filter(ServerResource.class::equals).findAny().isEmpty()) {
             LOGGER.warn("Failed to load API resources");
         }
