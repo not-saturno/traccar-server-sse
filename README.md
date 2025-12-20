@@ -1,4 +1,4 @@
-# traccar-sse
+# Traccar SSE
 
 > **Unofficial derivative of [traccar/traccar](https://github.com/traccar/traccar)**  
 > This repository extends the Traccar GPS tracking server with **Server-Sent Events (SSE)** support for real-time data dissemination.  
@@ -51,18 +51,7 @@ This work focuses exclusively on **data dissemination**, not on device communica
 
 At a high level, the data flow is extended as follows:
 
-GPS Device
-↓
-Protocol Decoder
-↓
-Position Entity
-↓
-Data Manager / Storage
-↓
-SSE Event Dispatcher
-↓
-HTTP SSE Clients
-
+GPS Device → Protocol Decoder → Position Entity → Data Manager / Storage → SSE Event Dispatcher → HTTP SSE Clients
 
 SSE connections are strictly **server → client** and do not participate in device
 communication or command execution.
