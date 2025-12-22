@@ -28,19 +28,19 @@ public class SseResource extends BaseResource {
     public void subscribe(@Context SseEventSink sink, @Context Sse sse) throws StorageException {
         long userId = getUserId();
 
-        final PositionSseListener[] listenerRef = new PositionSseListener[1];
-
-        Runnable cleanupTask = () -> {
-            if (listenerRef[0] != null) {
-                connectionManager.removeListener(userId, listenerRef[0]);
-            }
-        };
-
-        listenerRef[0] = new PositionSseListener(sink, sse, cleanupTask);
-
-        connectionManager.addListener(userId, listenerRef[0]);
-
+        // Fetch history first to keep logic clean
         List<Position> latest = PositionUtil.getLatestPositions(storage, userId);
-        latest.forEach(p -> listenerRef[0].onUpdatePosition(p));
+
+        // We use a final reference so the lambda below captures the exact object
+        final PositionSseListener listener = new PositionSseListener(sink, sse, null);
+
+        // Define the cleanup task to remove THIS specific listener instance
+        listener.setOnCleanup(() -> connectionManager.removeListener(userId, listener));
+
+        connectionManager.addListener(userId, listener);
+
+        for (Position p : latest) {
+            listener.onUpdatePosition(p);
+        }
     }
 }

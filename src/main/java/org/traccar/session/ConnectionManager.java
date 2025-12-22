@@ -160,8 +160,7 @@ public class ConnectionManager implements BroadcastInterface {
             return deviceSession;
         } else {
             unknownByEndpoint.put(connectionKey, firstUniqueId);
-            LOGGER.warn("Unknown device - " + String.join(" ", uniqueIds)
-                    + " (" + ((InetSocketAddress) remoteAddress).getHostString() + ")");
+            LOGGER.warn("Unknown device - {} ({})", String.join(" ", uniqueIds), ((InetSocketAddress) remoteAddress).getHostString());
             return null;
         }
     }
@@ -179,7 +178,7 @@ public class ConnectionManager implements BroadcastInterface {
 
         try {
             device.setId(storage.addObject(device, new Request(new Columns.Exclude("id"))));
-            LOGGER.info("Automatically registered " + uniqueId);
+            LOGGER.info("Automatically registered {}", uniqueId);
             return device;
         } catch (StorageException e) {
             LOGGER.warn("Automatic registration failed", e);
@@ -379,6 +378,7 @@ public class ConnectionManager implements BroadcastInterface {
 
             var devices = storage.getObjects(Device.class, new Request(
                     new Columns.Include("id"), new Condition.Permission(User.class, userId, Device.class)));
+            LOGGER.info("SSE: User {} subscribed to {} devices", userId, devices.size());
             userDevices.put(userId, devices.stream().map(BaseModel::getId).collect(Collectors.toSet()));
             devices.forEach(device -> deviceUsers.computeIfAbsent(device.getId(), id -> new HashSet<>()).add(userId));
         }
