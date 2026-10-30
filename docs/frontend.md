@@ -134,9 +134,15 @@ vue-router funciona sem configuração extra.
 > front. Sem elas, os textos de notificação (e-mail/SMS) ficam sem os rótulos traduzidos. Se as notificações forem
 > usadas, copie `src/resources/l10n` do `traccar/traccar-web` para `templates/translations`.
 
+## Documentação do próprio front
+
+O repositório do front tem a documentação de desenvolvimento em `traccar-web/docs/`:
+
+- `desenvolvimento.md`: estrutura, rotas, sessão, API, mapa, relatórios, convenções e armadilhas;
+- `configuracao.md`: variáveis de ambiente, configuração do servidor e constantes do código;
+- `dependencias.md`: dependências, política de licenças (PrimeVue fixado na 4.x, MIT) e restrições de versão.
+
 ## Pendências conhecidas do front
 
-- `vue-tsc` acusa ~53 erros de tipo já existentes em `settings/reports.vue`, `settings/new.vue` e
-  `settings/[trackerId].vue` (tipos do Chart.js e possíveis `null`). O `vite build` funciona, mas `npm run
-  type-check` falha.
 - `settings/account.vue` ainda não salva alterações (o `handleSave` só faz `console.log`).
+- Outras pendências estão em `traccar-web/docs/desenvolvimento.md`.
