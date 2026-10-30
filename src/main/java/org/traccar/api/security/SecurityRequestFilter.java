@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.database.StatisticsManager;
 import org.traccar.model.User;
+import org.traccar.publicaccess.PublicAccessService;
 import org.traccar.storage.StorageException;
 
 import jakarta.annotation.security.PermitAll;
@@ -51,11 +52,19 @@ public class SecurityRequestFilter implements ContainerRequestFilter {
     @Inject
     private StatisticsManager statisticsManager;
 
+    @Inject
+    private PublicAccessService publicAccessService;
+
     @Override
     public void filter(ContainerRequestContext requestContext) {
 
         if (requestContext.getMethod().equals("OPTIONS")) {
             return;
+        }
+
+        PublicFeature publicFeature = resourceInfo.getResourceMethod().getAnnotation(PublicFeature.class);
+        if (publicFeature != null && !publicAccessService.isEnabled(publicFeature.value())) {
+            throw new WebApplicationException(Response.Status.NOT_FOUND);
         }
 
         SecurityContext securityContext = null;
@@ -98,7 +107,7 @@ public class SecurityRequestFilter implements ContainerRequestFilter {
             requestContext.setSecurityContext(securityContext);
         } else {
             Method method = resourceInfo.getResourceMethod();
-            if (!method.isAnnotationPresent(PermitAll.class)) {
+            if (!method.isAnnotationPresent(PermitAll.class) && publicFeature == null) {
                 Response.ResponseBuilder responseBuilder = Response.status(Response.Status.UNAUTHORIZED);
                 String accept = request.getHeader("Accept");
                 if (accept != null && accept.contains("text/html")) {

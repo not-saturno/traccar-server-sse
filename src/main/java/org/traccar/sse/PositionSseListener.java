@@ -1,9 +1,5 @@
 package org.traccar.sse;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.sse.OutboundSseEvent;
-import jakarta.ws.rs.sse.Sse;
-import jakarta.ws.rs.sse.SseEventSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.model.Device;
@@ -11,6 +7,11 @@ import org.traccar.model.Event;
 import org.traccar.model.LogRecord;
 import org.traccar.model.Position;
 import org.traccar.session.ConnectionManager;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.sse.OutboundSseEvent;
+import jakarta.ws.rs.sse.Sse;
+import jakarta.ws.rs.sse.SseEventSink;
 
 public class PositionSseListener implements ConnectionManager.UpdateListener {
 

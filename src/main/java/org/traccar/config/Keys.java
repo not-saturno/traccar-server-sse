@@ -2251,6 +2251,42 @@ public final class Keys {
             List.of(KeyType.CONFIG));
 
     /**
+     * Enable anonymous access to public features (see {@code public.features}). Disabled by default, in which case
+     * every public endpoint responds with 404.
+     */
+    public static final ConfigKey<Boolean> PUBLIC_ENABLE = new BooleanConfigKey(
+            "public.enable",
+            List.of(KeyType.CONFIG),
+            false);
+
+    /**
+     * Comma-separated list of features available without login. Supported values: {@code devices} (public device
+     * list), {@code positions} (latest positions of public devices) and {@code stream} (SSE stream of public device
+     * updates). Features not listed respond with 404.
+     */
+    public static final ConfigKey<String> PUBLIC_FEATURES = new StringConfigKey(
+            "public.features",
+            List.of(KeyType.CONFIG),
+            "devices,positions,stream");
+
+    /**
+     * Device attribute that marks a device as public. Only devices with this attribute set to {@code true} are
+     * exposed by public features.
+     */
+    public static final ConfigKey<String> PUBLIC_ATTRIBUTE = new StringConfigKey(
+            "public.attribute",
+            List.of(KeyType.CONFIG),
+            "public");
+
+    /**
+     * How long the list of public devices is cached, in seconds.
+     */
+    public static final ConfigKey<Integer> PUBLIC_CACHE_TTL = new IntegerConfigKey(
+            "public.cacheTtl",
+            List.of(KeyType.CONFIG),
+            30);
+
+    /**
      * Output logging to the standard terminal output instead of a log file.
      */
     public static final ConfigKey<Boolean> LOGGER_CONSOLE = new BooleanConfigKey(

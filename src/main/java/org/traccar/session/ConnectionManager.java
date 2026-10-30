@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -77,6 +78,7 @@ public class ConnectionManager implements BroadcastInterface {
     private final DeviceLookupService deviceLookupService;
 
     private final Map<Long, Set<UpdateListener>> listeners = new HashMap<>();
+    private final Set<UpdateListener> globalListeners = new HashSet<>();
     private final Map<Long, Set<Long>> userDevices = new HashMap<>();
     private final Map<Long, Set<Long>> deviceUsers = new HashMap<>();
 
@@ -289,10 +291,14 @@ public class ConnectionManager implements BroadcastInterface {
     }
 
     public synchronized void sendKeepalive() {
-        for (Set<UpdateListener> userListeners : listeners.values()) {
-            for (UpdateListener listener : userListeners) {
+        // copies allow listeners to remove themselves while being notified
+        for (Set<UpdateListener> userListeners : List.copyOf(listeners.values())) {
+            for (UpdateListener listener : List.copyOf(userListeners)) {
                 listener.onKeepalive();
             }
+        }
+        for (UpdateListener listener : List.copyOf(globalListeners)) {
+            listener.onKeepalive();
         }
     }
 
@@ -306,10 +312,13 @@ public class ConnectionManager implements BroadcastInterface {
         for (long userId : deviceUsers.getOrDefault(device.getId(), Collections.emptySet())) {
             Set<UpdateListener> userListeners = listeners.get(userId);
             if (userListeners != null) {
-                for (UpdateListener listener : userListeners) {
+                for (UpdateListener listener : List.copyOf(userListeners)) {
                     listener.onUpdateDevice(device);
                 }
             }
+        }
+        for (UpdateListener listener : List.copyOf(globalListeners)) {
+            listener.onUpdateDevice(device);
         }
     }
 
@@ -321,10 +330,13 @@ public class ConnectionManager implements BroadcastInterface {
         for (long userId : deviceUsers.getOrDefault(position.getDeviceId(), Collections.emptySet())) {
             Set<UpdateListener> userListeners = listeners.get(userId);
             if (userListeners != null) {
-                for (UpdateListener listener : userListeners) {
+                for (UpdateListener listener : List.copyOf(userListeners)) {
                     listener.onUpdatePosition(position);
                 }
             }
+        }
+        for (UpdateListener listener : List.copyOf(globalListeners)) {
+            listener.onUpdatePosition(position);
         }
     }
 
@@ -335,7 +347,7 @@ public class ConnectionManager implements BroadcastInterface {
         }
         Set<UpdateListener> userListeners = listeners.get(userId);
         if (userListeners != null) {
-            for (UpdateListener listener : userListeners) {
+            for (UpdateListener listener : List.copyOf(userListeners)) {
                 listener.onUpdateEvent(event);
             }
         }
@@ -366,6 +378,7 @@ public class ConnectionManager implements BroadcastInterface {
                 record.setUniqueId(unknown.uniqueId());
                 listeners.values().stream()
                         .flatMap(Set::stream)
+                        .toList()
                         .forEach((listener) -> listener.onUpdateLog(record));
             }
         } else if (sessions.size() == 1) {
@@ -373,7 +386,7 @@ public class ConnectionManager implements BroadcastInterface {
             record.setUniqueId(firstEntry.getKey());
             record.setDeviceId(firstEntry.getValue().getDeviceId());
             for (long userId : deviceUsers.getOrDefault(record.getDeviceId(), Set.of())) {
-                for (UpdateListener listener : listeners.getOrDefault(userId, Set.of())) {
+                for (UpdateListener listener : List.copyOf(listeners.getOrDefault(userId, Set.of()))) {
                     listener.onUpdateLog(record);
                 }
             }
@@ -405,6 +418,18 @@ public class ConnectionManager implements BroadcastInterface {
             devices.forEach(device -> deviceUsers.computeIfAbsent(device.getId(), id -> new HashSet<>()).add(userId));
         }
         set.add(listener);
+    }
+
+    /**
+     * Registers a listener that receives device and position updates for every device, regardless of user
+     * permissions. Listeners are responsible for filtering what they forward.
+     */
+    public synchronized void addGlobalListener(UpdateListener listener) {
+        globalListeners.add(listener);
+    }
+
+    public synchronized void removeGlobalListener(UpdateListener listener) {
+        globalListeners.remove(listener);
     }
 
     public synchronized void removeListener(long userId, UpdateListener listener) {

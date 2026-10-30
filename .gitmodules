@@ -1,5 +1,4 @@
 [submodule "traccar-web"]
 	path = traccar-web
-	url = ../traccar-web.git
-	branch = master
-	ignore = all
+	url = ../gps-tracker-front.git
+	branch = main

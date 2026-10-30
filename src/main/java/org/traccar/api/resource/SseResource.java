@@ -1,5 +1,12 @@
 package org.traccar.api.resource;
 
+import org.traccar.api.BaseResource;
+import org.traccar.helper.model.PositionUtil;
+import org.traccar.model.Position;
+import org.traccar.session.ConnectionManager;
+import org.traccar.sse.PositionSseListener;
+import org.traccar.storage.StorageException;
+
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -8,13 +15,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
-import org.traccar.api.BaseResource;
-import org.traccar.helper.model.PositionUtil;
-import org.traccar.model.Position;
-import org.traccar.session.ConnectionManager;
-import org.traccar.sse.PositionSseListener;
-import org.traccar.storage.StorageException;
-
 import java.util.List;
 
 @Path("/sse")
