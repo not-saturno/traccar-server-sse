@@ -1,0 +1,28 @@
+# Reverse proxy for traccar-server-sse with automatic HTTPS (Let's Encrypt / ZeroSSL issuance and renewal).
+# See docs/deploy.md.
+#
+# Environment:
+#   SERVER_NAME  public domain, e.g. onibus.exemplo.ufpa.br (its DNS must point to this server)
+#   ACME_EMAIL   contact for certificate expiry notices
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$SERVER_NAME} {
+	request_body {
+		max_size 10MB
+	}
+
+	# Front (served by Traccar from web/), REST API, SSE, WebSocket and OsmAnd over HTTPS (POST /).
+	# Caddy flushes text/event-stream right away and upgrades WebSocket on its own.
+	# No "encode" here: Traccar already compresses, and compressing SSE would hold events back.
+	reverse_proxy traccar:8082 {
+		# Traccar reads CF-Connecting-IP, then X-Real-IP, then X-Forwarded-For: never trust the client's values
+		header_up -CF-Connecting-IP
+		header_up X-Real-IP {remote_host}
+
+		# Traccar does not mark the session cookie as Secure behind a TLS proxy
+		header_down Set-Cookie "^(JSESSIONID=.*)$" "$1; Secure"
+	}
+}

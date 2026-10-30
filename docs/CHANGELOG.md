@@ -14,6 +14,12 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 - Pasta `docs/`.
 - `docs/osmand-security.md`: levantamento de segurança do protocolo OsmAnd.
 - `docs/sse.md`: teste de carga (300 clientes SSE), prós e contras SSE vs WebSocket e recomendação.
+- Deploy em produção: `docker/Dockerfile.sse` (front + backend + `jlink`), `docker/compose/traccar-sse.yaml`
+  (nginx opcional via `--profile nginx`), `docker/compose/traccar-sse.xml`, template de nginx
+  `docker/nginx/traccar.conf.template` (HTTPS, HTTP/2, SSE sem buffer, WebSocket) e `.dockerignore`. Ver
+  [deploy.md](deploy.md).
+- Deploy com Caddy e certificado automático (emissão e renovação): `docker/caddy/Caddyfile` e
+  `docker/compose/traccar-sse-caddy.yaml`. Passa a ser o caminho recomendado em [deploy.md](deploy.md).
 
 ### Alterado
 - Submódulo `traccar-web` agora aponta para `gps-tracker-front` (branch `main`). Ver [frontend.md](frontend.md).

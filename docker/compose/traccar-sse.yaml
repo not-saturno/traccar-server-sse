@@ -1,0 +1,47 @@
+# traccar-server-sse in production. See docs/deploy.md.
+#
+#   nginx on the host:     docker compose -f docker/compose/traccar-sse.yaml up -d
+#   nginx in a container:  docker compose -f docker/compose/traccar-sse.yaml --profile nginx up -d
+#
+# SERVER_NAME (public domain) is read from the environment or from docker/compose/.env.
+
+name: traccar-sse
+
+services:
+
+  traccar:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.sse
+    image: traccar-sse:latest
+    restart: unless-stopped
+    ports:
+      # Web port only on loopback, for nginx on the host. The nginx container uses the compose network.
+      - "127.0.0.1:8082:8082"
+      # OsmAnd straight to the server. Remove it if trackers send through HTTPS (see docs/osmand-security.md).
+      - "5055:5055"
+    volumes:
+      - ./traccar-sse.xml:/opt/traccar/conf/traccar.xml:ro
+      - traccar-data:/opt/traccar/data
+      - traccar-logs:/opt/traccar/logs
+
+  nginx:
+    image: nginx:stable-alpine
+    profiles: [nginx]
+    restart: unless-stopped
+    depends_on:
+      - traccar
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SERVER_NAME: ${SERVER_NAME:-}
+      TRACCAR_UPSTREAM: traccar:8082
+    volumes:
+      - ../nginx/traccar.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+
+volumes:
+  traccar-data:
+  traccar-logs:

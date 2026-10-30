@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!DOCTYPE properties SYSTEM 'http://java.sun.com/dtd/properties.dtd'>
+
+<properties>
+
+    <!-- Production config for docker/compose/traccar-sse.yaml. See docs/deploy.md. -->
+
+    <entry key='database.driver'>org.h2.Driver</entry>
+    <entry key='database.url'>jdbc:h2:./data/database</entry>
+    <entry key='database.user'>sa</entry>
+    <entry key='database.password'></entry>
+
+    <!-- Public URL behind nginx, without trailing slash -->
+    <entry key='web.url'>https://onibus.exemplo.ufpa.br</entry>
+
+    <entry key='database.registerUnknown'>false</entry>
+
+    <entry key='public.enable'>true</entry>
+    <entry key='public.features'>devices,positions,stream</entry>
+
+</properties>

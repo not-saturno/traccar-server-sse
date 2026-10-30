@@ -9,6 +9,7 @@ Documentação das funcionalidades e alterações desta fork em relação ao
 | [sse.md](sse.md) | Stream SSE autenticado (`/api/sse`), comparação com o WebSocket, teste de carga e recomendação |
 | [frontend.md](frontend.md) | Submódulo `traccar-web` (gps-tracker-front): rotas, sessão, execução local, build |
 | [osmand-security.md](osmand-security.md) | Segurança do protocolo OsmAnd: riscos, mitigações e proposta de token |
+| [deploy.md](deploy.md) | Produção: Caddy com HTTPS automático (recomendado) ou nginx, no host ou em Docker, front, verificação |
 | [upstream-sync.md](upstream-sync.md) | Como sincronizar com o Traccar upstream e conflitos conhecidos |
 | [CHANGELOG.md](CHANGELOG.md) | Histórico de alterações da fork |
 

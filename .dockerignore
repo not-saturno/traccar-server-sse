@@ -1,0 +1,15 @@
+# Only what docker/Dockerfile.sse needs
+**
+!gradle/
+!gradlew
+!build.gradle
+!settings.gradle
+!openapi.yaml
+!src/
+!schema/
+!templates/
+!setup/traccar.xml
+!traccar-web/
+traccar-web/node_modules
+traccar-web/dist
+traccar-web/.env*.local
