@@ -16,12 +16,13 @@
  */
 package org.traccar.handler;
 
-import jakarta.inject.Inject;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
 import org.traccar.helper.DistanceCalculator;
 import org.traccar.model.Position;
 import org.traccar.session.cache.CacheManager;
+
+import jakarta.inject.Inject;
 
 public class DistanceHandler extends BasePositionHandler {
 
@@ -51,9 +52,7 @@ public class DistanceHandler extends BasePositionHandler {
         if (last != null) {
             totalDistance = last.getDouble(Position.KEY_TOTAL_DISTANCE);
             if (!position.hasAttribute(Position.KEY_DISTANCE)) {
-                distance = DistanceCalculator.distance(
-                        position.getLatitude(), position.getLongitude(),
-                        last.getLatitude(), last.getLongitude());
+                distance = DistanceCalculator.distance(position, last);
             }
             if (filter && last.getLatitude() != 0 && last.getLongitude() != 0) {
                 boolean satisfiesMin = minError == 0 || distance > minError;

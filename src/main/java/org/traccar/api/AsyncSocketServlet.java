@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 - 2024 Anton Tananaev (anton@traccar.org)
+ * Copyright 2015 - 2025 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,11 @@ import org.traccar.config.Keys;
 import org.traccar.helper.SessionHelper;
 import org.traccar.session.ConnectionManager;
 import org.traccar.storage.Storage;
+import org.traccar.storage.StorageException;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.servlet.http.HttpSession;
-import org.traccar.storage.StorageException;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.Duration;
@@ -68,7 +67,7 @@ public class AsyncSocketServlet extends JettyWebSocketServlet {
                 } catch (StorageException | GeneralSecurityException | IOException e) {
                     throw new RuntimeException(e);
                 }
-            } else if (req.getSession() != null) {
+            } else if (SessionHelper.isSessionOriginValid(req.getHttpServletRequest())) {
                 userId = (Long) ((HttpSession) req.getSession()).getAttribute(SessionHelper.USER_ID_KEY);
             }
             if (userId != null) {

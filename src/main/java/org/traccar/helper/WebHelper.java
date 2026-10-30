@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Anton Tananaev (anton@traccar.org)
+ * Copyright 2020 - 2026 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,35 +15,37 @@
  */
 package org.traccar.helper;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.eclipse.jetty.util.URIUtil;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.InvocationCallback;
+import jakarta.ws.rs.core.Response;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+
 public final class WebHelper {
 
-    private WebHelper() {
-    }
+    private static final List<String> PROXY_HEADERS = List.of("CF-Connecting-IP", "X-Real-IP", "X-Forwarded-For");
+
+    private WebHelper() {}
 
     public static String retrieveRemoteAddress(HttpServletRequest request) {
-
         if (request != null) {
-            String remoteAddress = request.getHeader("X-FORWARDED-FOR");
-
-            if (remoteAddress != null && !remoteAddress.isEmpty()) {
-                int separatorIndex = remoteAddress.indexOf(",");
-                if (separatorIndex > 0) {
-                    return remoteAddress.substring(0, separatorIndex); // remove the additional data
-                } else {
-                    return remoteAddress;
+            for (String proxyHeader : PROXY_HEADERS) {
+                String originalAddress = request.getHeader(proxyHeader);
+                if (originalAddress != null && !originalAddress.isEmpty()) {
+                    int delimiter = originalAddress.indexOf(",");
+                    return delimiter > 0 ? originalAddress.substring(0, delimiter) : originalAddress;
                 }
-            } else {
-                return request.getRemoteAddr();
             }
+            return request.getRemoteAddr();
         } else {
             return null;
         }
@@ -62,4 +64,27 @@ public final class WebHelper {
             return URIUtil.newURI("http", address, config.getInteger(Keys.WEB_PORT));
         }
     }
+
+    public static CompletableFuture<Void> post(
+            Invocation.Builder request, Entity<?> entity, Consumer<Response> handler) {
+        var future = new CompletableFuture<Void>();
+        request.async().post(entity, new InvocationCallback<Response>() {
+            @Override
+            public void completed(Response response) {
+                try (response) {
+                    handler.accept(response);
+                    future.complete(null);
+                } catch (Exception e) {
+                    future.completeExceptionally(e);
+                }
+            }
+
+            @Override
+            public void failed(Throwable throwable) {
+                future.completeExceptionally(throwable);
+            }
+        });
+        return future;
+    }
+
 }

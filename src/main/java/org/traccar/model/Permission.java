@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 - 2022 Anton Tananaev (anton@traccar.org)
+ * Copyright 2017 - 2026 Anton Tananaev (anton@traccar.org)
  * Copyright 2017 Andrey Kunitsyn (andrey@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,30 +16,27 @@
  */
 package org.traccar.model;
 
-import java.beans.Introspector;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
-
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.traccar.helper.ClassScanner;
 import org.traccar.storage.QueryIgnore;
+
+import java.beans.Introspector;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class Permission {
 
     private static final Map<String, Class<? extends BaseModel>> CLASSES = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     static {
-        try {
-            for (Class<?> clazz : ClassScanner.findSubclasses(BaseModel.class)) {
-                CLASSES.put(clazz.getSimpleName(), (Class<? extends BaseModel>) clazz);
-            }
-        } catch (IOException | ReflectiveOperationException | URISyntaxException e) {
-            throw new RuntimeException(e);
+        for (Class<? extends BaseModel> clazz : List.of(
+                Attribute.class, Calendar.class, Command.class, Device.class, Driver.class,
+                Geofence.class, Group.class, LinkedDevice.class, Maintenance.class, ManagedUser.class,
+                Notification.class, Order.class, Report.class, Server.class, User.class)) {
+            CLASSES.put(clazz.getSimpleName(), clazz);
         }
     }
 
@@ -51,6 +48,9 @@ public class Permission {
     private final long propertyId;
 
     public Permission(LinkedHashMap<String, Long> data) {
+        if (data.size() != 2) {
+            throw new IllegalArgumentException("Invalid permission");
+        }
         this.data = data;
         var iterator = data.entrySet().iterator();
         var owner = iterator.next();
@@ -84,9 +84,11 @@ public class Permission {
     public static String getStorageName(Class<?> ownerClass, Class<?> propertyClass) {
         String ownerName = ownerClass.getSimpleName();
         String propertyName = propertyClass.getSimpleName();
-        String managedPrefix = "Managed";
-        if (propertyName.startsWith(managedPrefix)) {
-            propertyName = propertyName.substring(managedPrefix.length());
+        for (String prefix : List.of("Managed", "Linked")) {
+            if (propertyName.startsWith(prefix)) {
+                propertyName = propertyName.substring(prefix.length());
+                break;
+            }
         }
         return "tc_" + Introspector.decapitalize(ownerName) + "_" + Introspector.decapitalize(propertyName);
     }

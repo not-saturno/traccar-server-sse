@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 - 2023 Anton Tananaev (anton@traccar.org)
+ * Copyright 2016 - 2026 Anton Tananaev (anton@traccar.org)
  * Copyright 2016 - 2018 Andrey Kunitsyn (andrey@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,6 @@
  */
 package org.traccar.api.resource;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.core.Context;
 import org.traccar.api.SimpleObjectResource;
 import org.traccar.helper.LogAction;
 import org.traccar.model.Event;
@@ -27,6 +25,7 @@ import org.traccar.model.UserRestrictions;
 import org.traccar.reports.CombinedReportProvider;
 import org.traccar.reports.DevicesReportProvider;
 import org.traccar.reports.EventsReportProvider;
+import org.traccar.reports.GeofenceReportProvider;
 import org.traccar.reports.RouteReportProvider;
 import org.traccar.reports.StopsReportProvider;
 import org.traccar.reports.SummaryReportProvider;
@@ -34,12 +33,14 @@ import org.traccar.reports.TripsReportProvider;
 import org.traccar.reports.common.ReportExecutor;
 import org.traccar.reports.common.ReportMailer;
 import org.traccar.reports.model.CombinedReportItem;
+import org.traccar.reports.model.GeofenceReportItem;
 import org.traccar.reports.model.StopReportItem;
 import org.traccar.reports.model.SummaryReportItem;
 import org.traccar.reports.model.TripReportItem;
 import org.traccar.storage.StorageException;
 
 import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -47,6 +48,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -68,6 +70,9 @@ public class ReportResource extends SimpleObjectResource<Report> {
 
     @Inject
     private EventsReportProvider eventsReportProvider;
+
+    @Inject
+    private GeofenceReportProvider geofenceReportProvider;
 
     @Inject
     private RouteReportProvider routeReportProvider;
@@ -94,7 +99,7 @@ public class ReportResource extends SimpleObjectResource<Report> {
     private HttpServletRequest request;
 
     public ReportResource() {
-        super(Report.class, "description");
+        super(Report.class, "description", List.of("description"));
     }
 
     private Response executeReport(long userId, boolean mail, ReportExecutor executor) {
@@ -128,7 +133,7 @@ public class ReportResource extends SimpleObjectResource<Report> {
 
     @Path("route")
     @GET
-    public Collection<Position> getRoute(
+    public Stream<Position> getRoute(
             @QueryParam("deviceId") List<Long> deviceIds,
             @QueryParam("groupId") List<Long> groupIds,
             @QueryParam("from") Date from,
@@ -210,6 +215,19 @@ public class ReportResource extends SimpleObjectResource<Report> {
             @QueryParam("to") Date to,
             @PathParam("type") String type) throws StorageException {
         return getEventsExcel(deviceIds, groupIds, types, alarms, from, to, type.equals("mail"));
+    }
+
+    @Path("geofences")
+    @GET
+    public Collection<GeofenceReportItem> getGeofences(
+            @QueryParam("deviceId") List<Long> deviceIds,
+            @QueryParam("groupId") List<Long> groupIds,
+            @QueryParam("geofenceId") List<Long> geofenceIds,
+            @QueryParam("from") Date from,
+            @QueryParam("to") Date to) throws StorageException {
+        permissionsService.checkRestriction(getUserId(), UserRestrictions::getDisableReports);
+        actionLogger.report(request, getUserId(), false, "geofences", from, to, deviceIds, groupIds);
+        return geofenceReportProvider.getObjects(getUserId(), deviceIds, groupIds, geofenceIds, from, to);
     }
 
     @Path("summary")

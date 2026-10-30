@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Anton Tananaev (anton@traccar.org)
+ * Copyright 2025 - 2026 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,16 @@ package org.traccar.database;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,7 +49,7 @@ public class LocaleManager {
     }
 
     public Path getTemplateFile(String root, String path, String language, String fileName) {
-        var languages = Stream.of(language, DEFAULT_LANGUAGE).filter(Objects::nonNull).toList();
+        var languages = Stream.of(sanitizeLanguage(language), DEFAULT_LANGUAGE).filter(Objects::nonNull).toList();
         for (var targetLanguage : languages) {
             Path targetFile = Path.of(root, path, targetLanguage, fileName);
             if (Files.exists(targetFile)) {
@@ -61,24 +60,31 @@ public class LocaleManager {
     }
 
     public Map<String, String> getBundle(String language) {
-        String resolvedLanguage = language != null ? language : DEFAULT_LANGUAGE;
+        String resolvedLanguage = Objects.requireNonNullElse(sanitizeLanguage(language), DEFAULT_LANGUAGE);
         return languageBundles.computeIfAbsent(resolvedLanguage, missingLanguage -> {
             Path targetFile = path.resolve(missingLanguage + ".json");
             Path file = Files.exists(targetFile) ? targetFile : path.resolve(DEFAULT_LANGUAGE + ".json");
             if (Files.exists(file)) {
                 try (InputStream in = Files.newInputStream(file)) {
-                    return objectMapper.readValue(in, new TypeReference<>() { });
+                    return objectMapper.readValue(in, new TypeReference<>() {});
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             } else {
-                return Collections.emptyMap();
+                return Map.of();
             }
         });
     }
 
     public String getString(String language, String key) {
         return getBundle(language).get(key);
+    }
+
+    private static String sanitizeLanguage(String language) {
+        if (language != null && !language.matches("^[A-Za-z0-9_-]+$")) {
+            throw new IllegalArgumentException("Invalid language");
+        }
+        return language;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Anton Tananaev (anton@traccar.org)
+ * Copyright 2022 - 2026 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,12 @@
  */
 package org.traccar.reports;
 
+import org.traccar.config.Config;
+import org.traccar.config.Keys;
 import org.traccar.helper.model.PositionUtil;
 import org.traccar.model.Device;
+import org.traccar.model.Geofence;
+import org.traccar.model.Position;
 import org.traccar.storage.Storage;
 import org.traccar.storage.StorageException;
 import org.traccar.storage.query.Columns;
@@ -25,56 +29,83 @@ import org.traccar.storage.query.Request;
 
 import jakarta.inject.Inject;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
+import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 public class KmlExportProvider {
 
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
+
+    private final Config config;
     private final Storage storage;
 
     @Inject
-    public KmlExportProvider(Storage storage) {
+    public KmlExportProvider(Config config, Storage storage) {
+        this.config = config;
         this.storage = storage;
     }
 
     public void generate(
-            OutputStream outputStream, long deviceId, Date from, Date to) throws StorageException {
+            OutputStream outputStream, long deviceId, long geofenceId, Date from, Date to)
+            throws StorageException, XMLStreamException {
 
         var device = storage.getObject(Device.class, new Request(
                 new Columns.All(), new Condition.Equals("id", deviceId)));
-        var positions = PositionUtil.getPositions(storage, deviceId, from, to);
 
-        var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        Geofence geofence = geofenceId == 0 ? null : storage.getObject(Geofence.class, new Request(
+                new Columns.All(), new Condition.Equals("id", geofenceId)));
 
-        try (PrintWriter writer = new PrintWriter(outputStream)) {
-            writer.print("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-            writer.print("<kml xmlns=\"http://www.opengis.net/kml/2.2\">");
-            writer.print("<Document>");
-            writer.print("<name>");
-            writer.print(device.getName());
-            writer.print("</name>");
-            writer.print("<Placemark>");
-            writer.print("<name>");
-            writer.print(dateFormat.format(from));
-            writer.print(" - ");
-            writer.print(dateFormat.format(to));
-            writer.print("</name>");
-            writer.print("<LineString>");
-            writer.print("<extrude>1</extrude>");
-            writer.print("<tessellate>1</tessellate>");
-            writer.print("<altitudeMode>absolute</altitudeMode>");
-            writer.print("<coordinates>");
-            writer.print(positions.stream()
-                    .map((p -> String.format("%f,%f,%f", p.getLongitude(), p.getLatitude(), p.getAltitude())))
-                    .collect(Collectors.joining(" ")));
-            writer.print("</coordinates>");
-            writer.print("</LineString>");
-            writer.print("</Placemark>");
-            writer.print("</Document>");
-            writer.print("</kml>");
+        XMLStreamWriter writer = XMLOutputFactory.newFactory()
+                .createXMLStreamWriter(outputStream, StandardCharsets.UTF_8.name());
+
+        writer.writeStartDocument(StandardCharsets.UTF_8.name(), "1.0");
+        writer.writeStartElement("kml");
+        writer.writeDefaultNamespace("http://www.opengis.net/kml/2.2");
+        writer.writeStartElement("Document");
+        writer.writeStartElement("name");
+        writer.writeCharacters(device.getName());
+        writer.writeEndElement();
+        writer.writeStartElement("Placemark");
+        writer.writeStartElement("name");
+        writer.writeCharacters(DATE_FORMAT.format(from.toInstant()) + " - " + DATE_FORMAT.format(to.toInstant()));
+        writer.writeEndElement();
+        writer.writeStartElement("LineString");
+        writer.writeStartElement("extrude");
+        writer.writeCharacters("1");
+        writer.writeEndElement();
+        writer.writeStartElement("tessellate");
+        writer.writeCharacters("1");
+        writer.writeEndElement();
+        writer.writeStartElement("altitudeMode");
+        writer.writeCharacters("absolute");
+        writer.writeEndElement();
+        writer.writeStartElement("coordinates");
+        try (Stream<Position> positions = PositionUtil.getPositionsStream(
+                storage, deviceId, from, to, config.getInteger(Keys.REPORT_MAX_POSITIONS))
+                .filter(position -> geofence == null || geofence.containsPosition(position))) {
+            String separator = "";
+            for (var iterator = positions.iterator(); iterator.hasNext();) {
+                Position position = iterator.next();
+                writer.writeCharacters(separator + String.format(
+                        "%f,%f,%f", position.getLongitude(), position.getLatitude(), position.getAltitude()));
+                separator = " ";
+            }
         }
+        writer.writeEndElement();
+        writer.writeEndElement();
+        writer.writeEndElement();
+        writer.writeEndElement();
+        writer.writeEndElement();
+        writer.writeEndDocument();
+        writer.flush();
+        writer.close();
     }
 
 }

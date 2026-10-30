@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Anton Tananaev (anton@traccar.org)
+ * Copyright 2024 - 2026 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,22 @@
  */
 package org.traccar.helper;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import org.traccar.model.User;
-import java.util.Date;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Date;
 
 public final class SessionHelper {
 
     public static final String USER_ID_KEY = "userId";
     public static final String EXPIRATION_KEY = "expiration";
+    public static final String ORIGIN_KEY = "origin";
 
-    private SessionHelper() {
-    }
+    private SessionHelper() {}
 
     public static void userLogin(LogAction actionLogger, HttpServletRequest request, User user, Date expiration) {
         request.getSession().invalidate();
@@ -36,7 +40,35 @@ public final class SessionHelper {
             request.getSession().setAttribute(EXPIRATION_KEY, expiration);
         }
 
+        String origin = request.getHeader(HttpHeaderNames.ORIGIN.toString());
+        if (origin != null) {
+            request.getSession().setAttribute(ORIGIN_KEY, origin);
+        }
+
         actionLogger.login(request, user.getId());
+    }
+
+    public static boolean isSessionOriginValid(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return false;
+        }
+        String sessionOrigin = (String) session.getAttribute(ORIGIN_KEY);
+        String requestOrigin = request.getHeader(HttpHeaderNames.ORIGIN.toString());
+        if (requestOrigin == null) {
+            return true;
+        }
+        if (sessionOrigin != null) {
+            return sessionOrigin.equals(requestOrigin);
+        }
+        String host = request.getHeader(HttpHeaderNames.HOST.toString());
+        try {
+            String originHost = new URI(requestOrigin).getHost();
+            String requestHost = new URI("//" + host).getHost();
+            return originHost != null && originHost.equalsIgnoreCase(requestHost);
+        } catch (URISyntaxException e) {
+            return false;
+        }
     }
 
 }

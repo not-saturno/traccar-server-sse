@@ -17,9 +17,9 @@ package org.traccar.protocol;
 
 import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
-import org.traccar.session.DeviceSession;
 import org.traccar.NetworkMessage;
 import org.traccar.Protocol;
+import org.traccar.config.Keys;
 import org.traccar.helper.BitUtil;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
@@ -28,6 +28,7 @@ import org.traccar.helper.UnitsConverter;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
+import org.traccar.session.DeviceSession;
 
 import java.net.SocketAddress;
 import java.util.regex.Pattern;
@@ -43,8 +44,8 @@ public class GlobalSatProtocolDecoder extends BaseProtocolDecoder {
 
     @Override
     protected void init() {
-        format0 = getConfig().getString(getProtocolName() + ".format0", "TSPRXAB27GHKLMnaicz*U!");
-        format1 = getConfig().getString(getProtocolName() + ".format1", "SARY*U!");
+        format0 = getConfig().getString(Keys.PROTOCOL_FORMAT_0.withPrefix(getProtocolName()));
+        format1 = getConfig().getString(Keys.PROTOCOL_FORMAT_1.withPrefix(getProtocolName()));
     }
 
     public void setFormat0(String format) {
@@ -166,7 +167,7 @@ public class GlobalSatProtocolDecoder extends BaseProtocolDecoder {
                     position.setLongitude(longitude);
                     break;
                 case '3':
-                    position.setLongitude(Double.parseDouble(value) * 0.000001);
+                    position.setLongitude(Double.parseDouble(value) / 1000000.0);
                     break;
                 case '6':
                     double latitude = Double.parseDouble(value.substring(1));
@@ -184,7 +185,7 @@ public class GlobalSatProtocolDecoder extends BaseProtocolDecoder {
                     position.setLatitude(latitude);
                     break;
                 case '8':
-                    position.setLatitude(Double.parseDouble(value) * 0.000001);
+                    position.setLatitude(Double.parseDouble(value) / 1000000.0);
                     break;
                 case 'G':
                     position.setAltitude(Double.parseDouble(value));

@@ -15,14 +15,6 @@
  */
 package org.traccar.database;
 
-import javax.naming.Context;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.InitialDirContext;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.config.Config;
@@ -30,6 +22,13 @@ import org.traccar.config.Keys;
 import org.traccar.model.User;
 
 import java.util.Hashtable;
+import javax.naming.Context;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.InitialDirContext;
+import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
 
 public class LdapProvider {
 
@@ -193,6 +192,9 @@ public class LdapProvider {
                 case '*' -> sb.append("\\2a");
                 case '(' -> sb.append("\\28");
                 case ')' -> sb.append("\\29");
+                case '&' -> sb.append("\\26");
+                case '|' -> sb.append("\\7c");
+                case '=' -> sb.append("\\3d");
                 case '\0' -> sb.append("\\00");
                 default -> sb.append(c);
             }

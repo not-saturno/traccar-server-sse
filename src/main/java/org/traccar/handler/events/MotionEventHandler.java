@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 - 2025 Anton Tananaev (anton@traccar.org)
+ * Copyright 2016 - 2026 Anton Tananaev (anton@traccar.org)
  * Copyright 2017 Andrey Kunitsyn (andrey@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,49 +16,111 @@
  */
 package org.traccar.handler.events;
 
-import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.traccar.config.Config;
+import org.traccar.config.Keys;
 import org.traccar.helper.model.AttributeUtil;
-import org.traccar.helper.model.PositionUtil;
 import org.traccar.model.Device;
 import org.traccar.model.Position;
 import org.traccar.reports.common.TripsConfig;
 import org.traccar.session.cache.CacheManager;
 import org.traccar.session.state.MotionProcessor;
 import org.traccar.session.state.MotionState;
+import org.traccar.session.state.NewMotionProcessor;
+import org.traccar.session.state.NewMotionState;
 import org.traccar.storage.Storage;
 import org.traccar.storage.StorageException;
 import org.traccar.storage.query.Columns;
 import org.traccar.storage.query.Condition;
 import org.traccar.storage.query.Request;
 
-public class MotionEventHandler extends BaseEventHandler {
+import jakarta.inject.Inject;
+import java.util.Date;
+
+public class MotionEventHandler extends BasePositionEventHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MotionEventHandler.class);
 
-    private final CacheManager cacheManager;
+    private final Config config;
     private final Storage storage;
 
     @Inject
-    public MotionEventHandler(CacheManager cacheManager, Storage storage) {
-        this.cacheManager = cacheManager;
+    public MotionEventHandler(Config config, CacheManager cacheManager, Storage storage) {
+        super(cacheManager);
+        this.config = config;
         this.storage = storage;
     }
 
     @Override
-    public void onPosition(Position position, Callback callback) {
+    protected void onPosition(Position position, Position lastPosition, Callback callback) {
 
         long deviceId = position.getDeviceId();
         Device device = cacheManager.getObject(Device.class, deviceId);
-        if (device == null || !PositionUtil.isLatest(cacheManager, position)) {
+        if (device == null) {
             return;
         }
 
-        TripsConfig tripsConfig = new TripsConfig(new AttributeUtil.CacheProvider(cacheManager, deviceId));
+        var attributeProvider = new AttributeUtil.CacheProvider(cacheManager, deviceId);
+        if (config.getBoolean(Keys.REPORT_TRIP_NEW_LOGIC)) {
+            double minDistance = AttributeUtil.lookup(attributeProvider, Keys.REPORT_TRIP_MIN_DISTANCE);
+            long minDuration = AttributeUtil.lookup(attributeProvider, Keys.REPORT_TRIP_MIN_DURATION) * 1000;
+            long stopGap = AttributeUtil.lookup(attributeProvider, Keys.REPORT_TRIP_STOP_GAP) * 1000;
+            boolean useIgnition = AttributeUtil.lookup(attributeProvider, Keys.REPORT_TRIP_USE_IGNITION);
+            handleNewLogic(device, position, minDistance, minDuration, stopGap, useIgnition, callback);
+        } else {
+            TripsConfig tripsConfig = new TripsConfig(attributeProvider);
+            handleOldLogic(device, position, lastPosition, tripsConfig, callback);
+        }
+    }
+
+    private void handleNewLogic(
+            Device device, Position position,
+            double minDistance, long minDuration, long stopGap, boolean useIgnition, Callback callback) {
+        NewMotionState state = new NewMotionState();
+        state.setMotionStreak(device.getMotionStreak());
+        state.setPositions(cacheManager.getPositions(device.getId()));
+        if (device.hasAttribute("motionTime")) {
+            // TODO temporary migration path
+            state.setEventPosition(
+                    new Date(((Number) device.getAttributes().remove("motionTime")).longValue()),
+                    ((Number) device.getAttributes().remove("motionLat")).doubleValue(),
+                    ((Number) device.getAttributes().remove("motionLon")).doubleValue());
+            state.setChanged(true);
+        } else if (device.getMotionTime() != null) {
+            state.setEventPosition(
+                    device.getMotionTime(),
+                    device.getMotionLatitude(),
+                    device.getMotionLongitude());
+        } else {
+            state.setEventPosition(position);
+        }
+        NewMotionProcessor.updateState(state, position, minDistance, minDuration, stopGap, useIgnition);
+        if (state.isChanged()) {
+            device.setMotionStreak(state.getMotionStreak());
+            device.setMotionTime(state.getEventTime());
+            device.setMotionLatitude(state.getEventLatitude());
+            device.setMotionLongitude(state.getEventLongitude());
+            try {
+                storage.updateObject(device, new Request(
+                        new Columns.Include(
+                                "motionStreak", "motionTime", "motionLatitude", "motionLongitude",
+                                "attributes"),
+                        new Condition.Equals("id", device.getId())));
+            } catch (StorageException e) {
+                LOGGER.warn("Update device motion error", e);
+            }
+        }
+        for (var event : state.getEvents()) {
+            callback.eventDetected(event);
+        }
+    }
+
+    private void handleOldLogic(
+            Device device, Position position, Position lastPosition, TripsConfig tripsConfig, Callback callback) {
         MotionState state = MotionState.fromDevice(device);
-        Position last = cacheManager.getPosition(deviceId);
-        MotionProcessor.updateState(state, last, position, position.getBoolean(Position.KEY_MOTION), tripsConfig);
+        MotionProcessor.updateState(
+                state, lastPosition, position, position.getBoolean(Position.KEY_MOTION), tripsConfig);
         if (state.isChanged()) {
             state.toDevice(device);
             try {

@@ -32,13 +32,11 @@ import java.util.stream.Collectors;
 
 public final class DeviceUtil {
 
-    private DeviceUtil() {
-    }
+    private DeviceUtil() {}
 
     public static void resetStatus(Storage storage) throws StorageException {
         storage.updateObject(new Device(), new Request(new Columns.Include("status")));
     }
-
 
     public static Collection<Device> getAccessibleDevices(
             Storage storage, long userId,
@@ -47,6 +45,11 @@ public final class DeviceUtil {
         var devices = storage.getObjects(Device.class, new Request(
                 new Columns.All(),
                 new Condition.Permission(User.class, userId, Device.class)));
+
+        if (deviceIds.isEmpty() && groupIds.isEmpty()) {
+            return devices;
+        }
+
         var deviceById = devices.stream()
                 .collect(Collectors.toUnmodifiableMap(Device::getId, x -> x));
         var devicesByGroup = devices.stream()
@@ -66,11 +69,14 @@ public final class DeviceUtil {
                 .collect(Collectors.toSet());
 
         var groupQueue = new LinkedList<>(groupIds);
-        while (!groupQueue.isEmpty()) {
-            long groupId = groupQueue.pop();
-            results.addAll(devicesByGroup.getOrDefault(groupId, Collections.emptyList()));
-            groupQueue.addAll(groupsByGroup.getOrDefault(groupId, Collections.emptyList())
-                    .stream().map(Group::getId).toList());
+        for (int depth = 0; depth < Storage.MAX_GROUP_DEPTH && !groupQueue.isEmpty(); depth++) {
+            int levelSize = groupQueue.size();
+            for (int i = 0; i < levelSize; i++) {
+                long groupId = groupQueue.pop();
+                results.addAll(devicesByGroup.getOrDefault(groupId, Collections.emptyList()));
+                groupQueue.addAll(groupsByGroup.getOrDefault(groupId, Collections.emptyList())
+                        .stream().map(Group::getId).toList());
+            }
         }
 
         return results;

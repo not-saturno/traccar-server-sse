@@ -27,19 +27,15 @@
       );
 
       CREATE INDEX IF NOT EXISTS tc_actions_id_idx ON tc_actions(id);
-
-      SELECT add_retention_policy('tc_actions', INTERVAL '1 year');
-      SELECT add_retention_policy('tc_positions', INTERVAL '1 year');
-      SELECT add_retention_policy('tc_events', INTERVAL '1 year');
     </sql>
 
   </changeSet>
 
-  <changeSet author="author" id="changelog-6.11.0-other">
+  <changeSet author="author" id="changelog-6.11.0-other-new">
 
     <preConditions onFail="MARK_RAN">
       <not>
-        <changeSetExecuted changeLogFile="changelog-6.11.0" id="changelog-6.11.0-timescale" author="author" />
+        <indexExists tableName="tc_actions" indexName="tc_actions_actiontime_idx" />
       </not>
     </preConditions>
 

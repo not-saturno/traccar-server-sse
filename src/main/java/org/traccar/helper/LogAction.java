@@ -16,14 +16,6 @@
  */
 package org.traccar.helper;
 
-import java.beans.Introspector;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-
-import jakarta.inject.Inject;
-import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,9 +28,20 @@ import org.traccar.storage.StorageException;
 import org.traccar.storage.query.Columns;
 import org.traccar.storage.query.Request;
 
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import java.beans.Introspector;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.List;
+
 public final class LogAction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LogAction.class);
+
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
 
     private final Storage storage;
 
@@ -147,9 +150,8 @@ public final class LogAction {
         action.setActionType(ACTION_REPORT);
         action.set("scheduled", scheduled ? true : null);
         action.set("type", report);
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        action.set("from", dateFormat.format(from));
-        action.set("to", dateFormat.format(to));
+        action.set("from", DATE_FORMAT.format(from.toInstant()));
+        action.set("to", DATE_FORMAT.format(to.toInstant()));
         action.set("devices", deviceIds.toString());
         action.set("groups", groupIds.toString());
         storeAction(action);
