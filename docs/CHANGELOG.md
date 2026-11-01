@@ -5,6 +5,8 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Front: parar de seguir um ônibus no mapa. Antes, depois de clicar num ônibus o mapa o seguia para sempre. Agora
+  arrastar o mapa, tocar no ✕ do aviso "Seguindo NOME" ou clicar de novo no ônibus para de seguir.
 - Front: animação da troca de ponto no mapa. O marcador desliza até a nova posição em 1,4 s (ease-out cúbico),
   com salto acima de 1 km e suporte a `prefers-reduced-motion`. Só no cliente: servidor e posições não mudam.
   Ver [suavizacao.md](suavizacao.md).

@@ -87,6 +87,14 @@ Na lista, cada item mostra o selo Online/Offline e o tempo desde o último sinal
 "há 2 h" ou a data). O tempo é atualizado a cada 10s. Dispositivo sem posição aparece como "Sem posição" e não é
 clicável.
 
+### Seguir um ônibus
+
+Clicar num ônibus da lista centraliza o mapa nele e passa a **segui-lo**: cada posição nova recentraliza o
+mapa. Um aviso "Seguindo NOME ✕" aparece no topo. Para parar de seguir:
+- **arraste o mapa** (o gesto indica que você quer olhar outro lugar);
+- toque no **✕** do aviso;
+- ou clique de novo no mesmo ônibus da lista.
+
 ### Animação da troca de ponto
 
 A cada posição ao vivo, o marcador desliza da posição atual até a nova em 1,4 s (ease-out cúbico), em linha
