@@ -82,12 +82,56 @@ data: {"id":3,"name":"Circular 01","category":"bus","status":"online","lastUpdat
 - Eventos de alarme (`events`) e `logs` **nunca** são enviados no stream público.
 - No navegador, use `new EventSource('/api/public/stream')`, sem `withCredentials`.
 
+## Validação das requisições
+
+Requisições **sem login** às rotas públicas passam por `PublicAccessGuard` (no `SecurityRequestFilter`), para que
+só o front do projeto, ou apps autorizados, usem essas rotas. Usuários logados não passam por essa validação.
+
+| Verificação | Regra | Resposta |
+|---|---|---|
+| Limite por IP | No máximo `public.rateLimit` requisições por minuto (IP real via `X-Real-IP` do proxy) | `429` + `Retry-After` |
+| Chave de API | `X-Api-Key: <chave>` ou `?apiKey=<chave>` (para `EventSource`) válida em `public.apiKeys` dispensa a checagem de origem | — |
+| Origem | `Origin` (ou, se ausente, a origem do `Referer`) precisa ser a **mesma do servidor** (igual ao `Host`), estar em `public.allowedOrigins` ou em `web.origin` | `403 Origin not allowed` |
+| Sem origem | Sem `Origin` e sem `Referer` (curl, scripts, outros apps) é recusado enquanto `public.requireOrigin=true` | `403` |
+| Streams | No máximo `public.maxStreams` streams públicos abertos por IP | `429` |
+
+O front servido pelo próprio Traccar (ou atrás do Caddy/nginx do [deploy.md](deploy.md), que preservam o
+`Host`) funciona sem configuração: o navegador envia o `Referer` da própria página. Em desenvolvimento, o proxy
+do Vite envia o `Host` original em `X-Forwarded-Host`.
+
+### Configuração
+
+| Chave | Padrão | Descrição |
+|---|---|---|
+| `public.allowedOrigins` | — | Origens extras autorizadas (ex.: `https://outro-front.ufpa.br`), separadas por vírgula. `*` desliga a checagem de origem |
+| `public.requireOrigin` | `true` | Recusa requisições sem `Origin` e sem `Referer` |
+| `public.apiKeys` | — | Chaves para apps autorizados, separadas por vírgula. Gere com `openssl rand -hex 24` |
+| `public.rateLimit` | `600` | Requisições por minuto por IP (`0` desliga) |
+| `public.maxStreams` | `50` | Streams públicos simultâneos por IP (`0` desliga) |
+
+Os limites por IP são altos de propósito. Muitos usuários podem sair pelo mesmo IP (NAT da rede do campus ou da
+operadora de celular), e um stream fechado só libera a vaga no próximo keepalive (até 55 s). Ajuste com base no
+uso real.
+
+### O que isso garante (e o que não)
+
+| Quem tenta usar as rotas | Resultado |
+|---|---|
+| Outro **site** no navegador | **Bloqueado.** O navegador envia o `Origin` real e não deixa o site falsificá-lo; o CORS também impede ler a resposta |
+| App ou script **sem** cabeçalhos de origem | **Bloqueado** (`403`) |
+| App ou script que **forja** `Origin`/`Referer` | **Passa**, mas limitado por IP (`429`). Não há como impedir isso num endpoint público sem login: qualquer segredo colocado no front fica visível no navegador |
+| App parceiro **autorizado** | Usa uma chave de `public.apiKeys` |
+
+Para bloquear de vez quem forja cabeçalhos, os dados teriam que exigir login (rotas não públicas).
+
 ## Comportamento de segurança
 
 | Situação | Resposta |
 |---|---|
 | `public.enable=false`, ou funcionalidade fora de `public.features` | `404 Not Found`, mesmo para usuários logados |
-| Funcionalidade liberada, sem login | `200`, só com dispositivos públicos |
+| Funcionalidade liberada, sem login, origem válida ou chave de API | `200`, só com dispositivos públicos |
+| Funcionalidade liberada, sem login, origem estranha ou ausente | `403` (ver [validação](#validação-das-requisições)) |
+| Acima do limite por IP | `429` |
 | Funcionalidade liberada, com login | `200`, mesma resposta (o endpoint público não usa as permissões do usuário) |
 | Qualquer outro endpoint `/api/*` sem login | `401`, comportamento original do Traccar |
 
@@ -99,6 +143,7 @@ data: {"id":3,"name":"Circular 01","category":"bus","status":"online","lastUpdat
 | `SecurityRequestFilter` | `src/main/java/org/traccar/api/security/SecurityRequestFilter.java` | Responde 404 se a funcionalidade estiver desligada e dispensa login se estiver ligada |
 | `PublicAccessService` | `src/main/java/org/traccar/publicaccess/PublicAccessService.java` | Lê a configuração e mantém o cache dos dispositivos públicos |
 | `PublicResource` | `src/main/java/org/traccar/api/resource/PublicResource.java` | Endpoints `/api/public/*` |
+| `PublicAccessGuard` | `src/main/java/org/traccar/publicaccess/PublicAccessGuard.java` | Valida origem/chave de API e aplica os limites por IP nas requisições anônimas |
 | `PublicSseListener` | `src/main/java/org/traccar/publicaccess/PublicSseListener.java` | Filtra as atualizações do stream público |
 | `ConnectionManager` (alterado) | `src/main/java/org/traccar/session/ConnectionManager.java` | `addGlobalListener`/`removeGlobalListener`: recebem atualizações de todos os dispositivos, e o listener filtra |
 | Chaves de config | `src/main/java/org/traccar/config/Keys.java` | `PUBLIC_ENABLE`, `PUBLIC_FEATURES`, `PUBLIC_ATTRIBUTE`, `PUBLIC_CACHE_TTL` |

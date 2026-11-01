@@ -19,4 +19,10 @@
     <entry key='public.enable'>true</entry>
     <entry key='public.features'>devices,positions,stream</entry>
 
+    <!-- Public routes only accept the front's own origin. See docs/public-access.md -->
+    <!-- <entry key='public.allowedOrigins'>https://outro-front.ufpa.br</entry> -->
+    <!-- <entry key='public.apiKeys'>key-for-an-authorized-app</entry> -->
+    <!-- <entry key='public.rateLimit'>600</entry> -->
+    <!-- <entry key='public.maxStreams'>50</entry> -->
+
 </properties>

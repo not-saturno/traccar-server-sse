@@ -154,6 +154,7 @@ Entradas de `traccar.xml` relevantes atrás do proxy. O compose usa `docker/comp
 | `web.url` | `https://onibus.exemplo.ufpa.br` (sem `/` no fim) | Links em notificações e relatórios, OpenID |
 | `web.address` | `127.0.0.1` | Só no cenário A: a porta 8082 escuta apenas localmente. No Docker, quem limita é o `ports` do compose |
 | `public.enable`, `public.features` | `true`, `devices,positions,stream` | Mapa público para visitantes (ver [public-access.md](public-access.md)) |
+| `public.allowedOrigins`, `public.apiKeys`, `public.rateLimit`, `public.maxStreams` | comentadas (padrões) | Rotas públicas só aceitam a origem do próprio front, com limite por IP. Ver [public-access.md](public-access.md#validação-das-requisições) |
 | `database.registerUnknown` | `false` | Não cadastrar automaticamente rastreadores desconhecidos |
 | `database.*` | H2 (padrão) ou MySQL/PostgreSQL | O H2 em arquivo serve para poucos ônibus. Para volume maior, use MySQL ou PostgreSQL (exemplo em `docker/compose/traccar-mysql.yaml`) |
 

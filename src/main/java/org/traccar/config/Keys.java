@@ -2287,6 +2287,50 @@ public final class Keys {
             30);
 
     /**
+     * Comma-separated origins (for example {@code https://onibus.ufpa.br}) allowed to call public features without
+     * login. Requests from the same origin as the server (Origin or Referer matching the Host header) and the
+     * origins in {@code web.origin} are always allowed. Use {@code *} to disable the origin check.
+     */
+    public static final ConfigKey<String> PUBLIC_ALLOWED_ORIGINS = new StringConfigKey(
+            "public.allowedOrigins",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Reject anonymous requests to public features that carry neither an Origin nor a Referer header (scripts and
+     * other apps), unless they present a valid API key. Requests with a foreign origin are always rejected.
+     */
+    public static final ConfigKey<Boolean> PUBLIC_REQUIRE_ORIGIN = new BooleanConfigKey(
+            "public.requireOrigin",
+            List.of(KeyType.CONFIG),
+            true);
+
+    /**
+     * Comma-separated API keys for authorized external apps. Sent in the {@code X-Api-Key} header or the
+     * {@code apiKey} query parameter (needed by EventSource). A valid key skips the origin check.
+     */
+    public static final ConfigKey<String> PUBLIC_API_KEYS = new StringConfigKey(
+            "public.apiKeys",
+            List.of(KeyType.CONFIG));
+
+    /**
+     * Maximum anonymous requests to public features per client IP per minute. Zero disables the limit. The default is
+     * generous because many users can share one public IP (campus or mobile carrier NAT).
+     */
+    public static final ConfigKey<Integer> PUBLIC_RATE_LIMIT = new IntegerConfigKey(
+            "public.rateLimit",
+            List.of(KeyType.CONFIG),
+            600);
+
+    /**
+     * Maximum simultaneous anonymous public streams per client IP. Zero disables the limit. Closed streams are only
+     * released at the next keepalive (up to 55 seconds), and users behind the same NAT share the limit.
+     */
+    public static final ConfigKey<Integer> PUBLIC_MAX_STREAMS = new IntegerConfigKey(
+            "public.maxStreams",
+            List.of(KeyType.CONFIG),
+            50);
+
+    /**
      * Output logging to the standard terminal output instead of a log file.
      */
     public static final ConfigKey<Boolean> LOGGER_CONSOLE = new BooleanConfigKey(

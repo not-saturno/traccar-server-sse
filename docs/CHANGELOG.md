@@ -5,6 +5,10 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Validação das requisições às rotas públicas sem login (`PublicAccessGuard`): só a origem do próprio front
+  (ou `public.allowedOrigins`/`web.origin`) e apps com chave (`public.apiKeys`); sem origem = `403`; limite por
+  IP de requisições (`public.rateLimit`, padrão 600/min) e de streams (`public.maxStreams`, padrão 50).
+  Usuários logados não são afetados. Ver [public-access.md](public-access.md#validação-das-requisições).
 - Front: parar de seguir um ônibus no mapa. Antes, depois de clicar num ônibus o mapa o seguia para sempre. Agora
   arrastar o mapa, tocar no ✕ do aviso "Seguindo NOME" ou clicar de novo no ônibus para de seguir.
 - Front: animação da troca de ponto no mapa. O marcador desliza até a nova posição em 1,4 s (ease-out cúbico),

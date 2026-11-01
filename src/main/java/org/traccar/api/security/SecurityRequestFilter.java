@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.database.StatisticsManager;
 import org.traccar.model.User;
+import org.traccar.publicaccess.PublicAccessGuard;
 import org.traccar.publicaccess.PublicAccessService;
 import org.traccar.storage.StorageException;
 
@@ -54,6 +55,9 @@ public class SecurityRequestFilter implements ContainerRequestFilter {
 
     @Inject
     private PublicAccessService publicAccessService;
+
+    @Inject
+    private PublicAccessGuard publicAccessGuard;
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -114,6 +118,10 @@ public class SecurityRequestFilter implements ContainerRequestFilter {
                     responseBuilder.header("WWW-Authenticate", "Basic realm=\"api\"");
                 }
                 throw new WebApplicationException(responseBuilder.build());
+            }
+            if (publicFeature != null) {
+                // anonymous use of a public feature: only from allowed origins or with an API key, rate limited
+                publicAccessGuard.check(request);
             }
         }
 
