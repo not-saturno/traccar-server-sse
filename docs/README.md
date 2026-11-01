@@ -8,6 +8,7 @@ Documentação das funcionalidades e alterações desta fork em relação ao
 | [public-access.md](public-access.md) | Camada de acesso público: configuração, endpoints sem login, segurança |
 | [sse.md](sse.md) | Stream SSE autenticado (`/api/sse`), comparação com o WebSocket, teste de carga e recomendação |
 | [frontend.md](frontend.md) | Submódulo `traccar-web` (gps-tracker-front): rotas, sessão, execução local, build |
+| [suavizacao.md](suavizacao.md) | Suavização de localização: algoritmo de referência e o que foi implementado (animação da troca de ponto no front) |
 | [osmand-security.md](osmand-security.md) | Segurança do protocolo OsmAnd: riscos, mitigações e proposta de token |
 | [deploy.md](deploy.md) | Produção: Caddy com HTTPS automático (recomendado) ou nginx, no host ou em Docker, front, verificação |
 | [upstream-sync.md](upstream-sync.md) | Como sincronizar com o Traccar upstream e conflitos conhecidos |

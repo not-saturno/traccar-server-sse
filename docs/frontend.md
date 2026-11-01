@@ -87,6 +87,17 @@ Na lista, cada item mostra o selo Online/Offline e o tempo desde o último sinal
 "há 2 h" ou a data). O tempo é atualizado a cada 10s. Dispositivo sem posição aparece como "Sem posição" e não é
 clicável.
 
+### Animação da troca de ponto
+
+A cada posição ao vivo, o marcador desliza da posição atual até a nova em 1,4 s (ease-out cúbico), em linha
+reta. O ônibus anda livre no mapa, sem trajeto. O primeiro lote do stream posiciona direto, distâncias acima de
+1 km saltam, e `prefers-reduced-motion` desliga a animação. Código em `traccar-web/src/utils/markerAnimator.ts`.
+Detalhes em [suavizacao.md](suavizacao.md#implementação-nesta-fork-traccar-server-sse).
+
+As posições chegam ao front cerca de **3 s** depois de o rastreador enviar. É o `server.buffering.threshold`
+padrão do Traccar (3000 ms), que segura cada posição para reordenar as que chegam fora de ordem. Com `0` o atraso
+some, mas posições fora de ordem deixam de ser corrigidas.
+
 ### Categorias de dispositivo
 
 Definidas em `src/data/categories.ts` e usadas pelo cadastro, pela edição e pelos relatórios:
