@@ -17,7 +17,9 @@ COPY src src
 RUN ./gradlew --no-daemon assemble
 
 FROM eclipse-temurin:21-jdk AS jre
-RUN jlink --add-modules java.se,jdk.charsets,jdk.crypto.ec,jdk.net,jdk.unsupported \
+# Extra runtime modules, comma-prefixed. The dev compose adds ",jdk.jdwp.agent" for the debugger
+ARG EXTRA_MODULES=""
+RUN jlink --add-modules java.se,jdk.charsets,jdk.crypto.ec,jdk.net,jdk.unsupported${EXTRA_MODULES} \
     --strip-debug --no-header-files --no-man-pages --compress=zip-6 --output /jre
 
 FROM debian:stable-slim

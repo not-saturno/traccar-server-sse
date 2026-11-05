@@ -130,6 +130,9 @@ Veja `traccar-web/.env.example`.
 
 ## Rodando localmente
 
+Com Docker (front com hot reload + backend + depurador): ver [desenvolvimento.md](desenvolvimento.md#docker-modo-desenvolvedor).
+Sem Docker:
+
 ```bash
 # 1. servidor (na raiz deste repo). O debug.xml já tem public.enable=true e web.path=./traccar-web/dist
 ./gradlew assemble

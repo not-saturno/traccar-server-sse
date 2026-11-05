@@ -10,6 +10,7 @@ Documentação das funcionalidades e alterações desta fork em relação ao
 | [frontend.md](frontend.md) | Submódulo `traccar-web` (gps-tracker-front): rotas, sessão, execução local, build |
 | [suavizacao.md](suavizacao.md) | Suavização de localização: algoritmo de referência e o que foi implementado (animação da troca de ponto no front) |
 | [osmand-security.md](osmand-security.md) | Segurança do protocolo OsmAnd: riscos, mitigações e proposta de token |
+| [desenvolvimento.md](desenvolvimento.md) | Desenvolvimento: modo dev via Docker (hot reload, depurador, portas) ou direto no host |
 | [deploy.md](deploy.md) | Produção: Caddy com HTTPS automático (recomendado) ou nginx, no host ou em Docker, front, verificação |
 | [upstream-sync.md](upstream-sync.md) | Como sincronizar com o Traccar upstream e conflitos conhecidos |
 | [CHANGELOG.md](CHANGELOG.md) | Histórico de alterações da fork |

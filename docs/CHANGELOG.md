@@ -5,6 +5,10 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Modo desenvolvedor via Docker (`docker/compose/traccar-sse-dev.yaml`): front no Vite com hot reload, backend
+  compilado do código atual com depurador JDWP na 5005, H2 de desenvolvimento e portas configuráveis
+  (`TRACCAR_PORT`, `OSMAND_PORT`, `DEBUG_PORT`, `FRONT_PORT`). `Dockerfile.sse` ganhou o `ARG EXTRA_MODULES`
+  (a imagem de produção não muda). Ver [desenvolvimento.md](desenvolvimento.md).
 - Validação das requisições às rotas públicas sem login (`PublicAccessGuard`): só a origem do próprio front
   (ou `public.allowedOrigins`/`web.origin`) e apps com chave (`public.apiKeys`); sem origem = `403`; limite por
   IP de requisições (`public.rateLimit`, padrão 600/min) e de streams (`public.maxStreams`, padrão 50).
