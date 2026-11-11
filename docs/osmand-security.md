@@ -87,6 +87,34 @@ Exigir um segredo além do ID, conferido no `OsmAndProtocolDecoder`:
 O app **Traccar Client** permite URL customizada com parâmetros. Rastreadores de hardware que falam OsmAnd
 nem sempre permitem, então verifique o modelo usado antes de exigir o token.
 
+## Protocolo Watch
+
+Os GPS dos ônibus usam o protocolo **Watch** (TCP 5093). O cenário de segurança é parecido com o do OsmAnd, com
+algumas diferenças:
+
+| Aspecto | Watch |
+|---|---|
+| Autenticação | **Nenhuma.** A identidade é o ID na mensagem (`[3G*<ID>*...]`), em texto claro |
+| Criptografia | **Nenhuma.** TCP puro; esses aparelhos não suportam TLS |
+| ID escolhível? | **Não.** O ID vem do aparelho (normalmente derivado do IMEI), então a mitigação de "ID aleatório" não se aplica |
+| ID desconhecido | Recusado: o servidor não responde e registra `Unknown device` (com `database.registerUnknown=false`) |
+| Comandos | O servidor pode **enviar comandos** ao aparelho pela conexão (SOS, intervalo, reboot). Só usuários logados com permissão no dispositivo conseguem |
+| Passa pela Cloudflare? | Não. A porta 5093 fica exposta direto no IP do servidor (ver [cloudflare.md](cloudflare.md#rastreadores-watch-tcp-5093)) |
+
+Riscos: quem descobrir o ID de um ônibus (por exemplo, capturando o tráfego da rede celular ou vendo o
+aparelho) consegue enviar posições falsas. A porta 5093 também fica exposta a varreduras e a tentativas de
+sobrecarga, sem a proteção da Cloudflare.
+
+Mitigações possíveis:
+
+- Manter `database.registerUnknown=false` (padrão) e `protocols.enable` só com os protocolos usados.
+- Não divulgar os IDs dos aparelhos. Os endpoints públicos já não expõem o `uniqueId`.
+- **Firewall por faixa de IP da operadora** dos chips dos GPS, se ela informar as faixas. Isso reduz bastante a
+  exposição da 5093.
+- **APN privada** da operadora (chips numa rede privada até o servidor): resolve autenticação e exposição, mas
+  é um serviço contratado.
+- `filter.enable` com limites de velocidade e distância, para descartar posições absurdas.
+
 ## Checklist de produção
 
 - [ ] `uniqueId` aleatório em todos os ônibus

@@ -32,6 +32,6 @@ COPY schema schema
 COPY templates templates
 COPY setup/traccar.xml conf/traccar.xml
 RUN mkdir -p data logs
-EXPOSE 8082 5055
+EXPOSE 8082 5055 5093
 ENTRYPOINT ["/opt/traccar/jre/bin/java", "-XX:+ExitOnOutOfMemoryError"]
 CMD ["-jar", "tracker-server.jar", "conf/traccar.xml"]

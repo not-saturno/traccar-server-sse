@@ -5,6 +5,13 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Protocolo Watch (GPS dos ônibus, TCP 5093): porta publicada nos composes e no `Dockerfile.sse`;
+  `protocols.enable=watch,osmand` nas configs de produção e dev; simulador `tools/watch-device.py`. Na Cloudflare
+  o Watch vai direto ao IP do servidor (TCP não passa pelo túnel). Ver [cloudflare.md](cloudflare.md) e
+  [osmand-security.md](osmand-security.md#protocolo-watch).
+- Publicação via Cloudflare Tunnel: `docker/compose/traccar-sse-cloudflare.yaml` (produção, sem portas
+  publicadas) e perfil `tunnel` no compose de dev. Front: `VITE_ALLOWED_HOSTS`. `docker/compose/.env` (token) no
+  `.gitignore`. Ver [cloudflare.md](cloudflare.md).
 - Modo desenvolvedor via Docker (`docker/compose/traccar-sse-dev.yaml`): front no Vite com hot reload, backend
   compilado do código atual com depurador JDWP na 5005, H2 de desenvolvimento e portas configuráveis
   (`TRACCAR_PORT`, `OSMAND_PORT`, `DEBUG_PORT`, `FRONT_PORT`). `Dockerfile.sse` ganhou o `ARG EXTRA_MODULES`

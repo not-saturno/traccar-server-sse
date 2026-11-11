@@ -12,7 +12,8 @@ Arquivos: `docker/compose/traccar-sse-dev.yaml` e `docker/compose/traccar-sse-de
 | `front` | Vite com **hot reload**, montando `traccar-web/` do host | http://localhost:5173 |
 | `traccar` | Backend compilado do código atual (`docker/Dockerfile.sse`), H2 de desenvolvimento, só o protocolo OsmAnd | http://localhost:8082 |
 | depurador | JDWP do backend, para conectar a IDE | `localhost:5005` |
-| OsmAnd | Para simular rastreadores | `localhost:5055` |
+| Watch | Protocolo dos GPS dos ônibus (TCP) | `localhost:5093` |
+| OsmAnd | Para testes por HTTP | `localhost:5055` |
 
 ### Pré-requisitos (Windows + WSL)
 
@@ -52,7 +53,7 @@ docker compose -f docker/compose/traccar-sse-dev.yaml up --build
 Se algo já usa as portas (por exemplo, um Traccar local na 8082), troque só o lado do host:
 
 ```bash
-TRACCAR_PORT=18082 OSMAND_PORT=15055 DEBUG_PORT=15005 FRONT_PORT=5180 \
+TRACCAR_PORT=18082 OSMAND_PORT=15055 WATCH_PORT=15093 DEBUG_PORT=15005 FRONT_PORT=5180 \
   docker compose -f docker/compose/traccar-sse-dev.yaml up --build
 ```
 
@@ -76,8 +77,25 @@ O runtime da imagem é gerado pelo `jlink` e só tem os módulos necessários. O
 
 ### Simular um ônibus
 
+Com o **protocolo Watch** (o dos GPS dos ônibus), use o simulador `tools/watch-device.py`. Ele abre uma
+conexão TCP como um rastreador real, manda o heartbeat (`LK`) e depois uma posição a cada `--interval`
+segundos, andando para leste:
+
+1. Logado como administrador, crie um dispositivo com identificador `9031853319` e o atributo `public` = `true`.
+2. Rode:
+
+   ```bash
+   python3 tools/watch-device.py --id 9031853319              # até Ctrl+C, uma posição a cada 10 s
+   python3 tools/watch-device.py --id 9031853319 --interval 5 --count 20
+   ```
+
+   `LK -> [3G*9031853319*0002*LK]` indica que o servidor reconheceu o rastreador. `LK -> sem resposta` indica
+   que o identificador não está cadastrado.
+
+Com o **OsmAnd** (HTTP), para testes rápidos:
+
 1. Logado como administrador, crie um dispositivo com identificador `dev1` e o atributo `public` = `true`.
-2. Envie posições pelo OsmAnd:
+2. Envie posições:
 
    ```bash
    curl "http://localhost:5055/?id=dev1&lat=-1.4750&lon=-48.4500&timestamp=$(date +%s)"
@@ -119,6 +137,12 @@ O Docker não estava disponível na máquina onde isto foi escrito (Docker Deskt
 | Front pelo proxy | Vite com `VITE_PROXY_TARGET` apontando para o backend | Mapa carregou o ônibus público, sem falhas de API; direto no backend sem origem: `403` |
 | Instalação do front | Simulação do comando do container | `npm ci` só na primeira vez e quando o lock muda |
 | Polling | `VITE_USE_POLLING=true` | Vite sobe normalmente |
+
+### Abrir o dev pela internet (Cloudflare)
+
+Para mostrar o dev para outras pessoas ou testar no celular, use o perfil `tunnel` com um túnel nomeado. Ver
+[cloudflare.md](cloudflare.md#desenvolvimento-abrir-o-dev-para-outras-pessoas-ou-para-o-celular). Quick Tunnels
+(`trycloudflare.com`) não servem: não têm SSE.
 
 ## Direto no host
 

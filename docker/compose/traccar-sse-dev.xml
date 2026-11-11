@@ -21,7 +21,8 @@
          X-Forwarded-Host. Listed explicitly so a VITE_API_URL setup without the proxy also works. -->
     <entry key='public.allowedOrigins'>http://localhost:5173</entry>
 
-    <!-- Only OsmAnd: keeps the dev container from opening hundreds of protocol ports -->
-    <entry key='protocols.enable'>osmand</entry>
+    <!-- Only the protocols in use (Watch trackers, OsmAnd for tests): keeps the container from opening
+         hundreds of protocol ports -->
+    <entry key='protocols.enable'>watch,osmand</entry>
 
 </properties>

@@ -12,6 +12,7 @@ navegador / app ──HTTPS:443──▶ Caddy/nginx ──HTTP──▶ Traccar
                                        │                      ├─ /api/socket  WebSocket
                                        │                      └─ POST /       OsmAnd via HTTPS
 rastreador OsmAnd ──:5055 (opcional, ver osmand-security.md)──▶ Traccar :5055
+GPS dos ônibus (Watch) ──TCP :5093──────────────────────────────▶ Traccar :5093
 ```
 
 Arquivos:
@@ -26,6 +27,8 @@ Arquivos:
 | `docker/compose/traccar-sse.xml` | `traccar.xml` de produção usado pelos dois compose |
 | `.dockerignore` | Limita o contexto do build ao que a imagem precisa |
 | `setup/build-dist.sh` | Pacote `.tar.gz` com Java embutido, para rodar no host sem Docker (`setup/build-dist.sh --help`) |
+
+> Publicar pela Cloudflare (sem abrir portas, HTTPS da Cloudflare): ver [cloudflare.md](cloudflare.md).
 
 ## Escolha do cenário
 
@@ -281,6 +284,7 @@ renovar sem parar o nginx, emita com `--webroot -w /var/www/certbot`: o template
 | 80, 443/TCP | Sim (Caddy ou nginx) |
 | 443/UDP | Opcional, HTTP/3 do Caddy |
 | 8082 | Não. Só `127.0.0.1` ou a rede do compose |
+| 5093/TCP | **Sim**: protocolo Watch dos GPS dos ônibus (TCP puro, não passa por Caddy/nginx/Cloudflare) |
 | 5055 | Só se os rastreadores enviarem direto. Com OsmAnd via HTTPS (`POST https://dominio/`), feche |
 | 5000–5500 (outros protocolos) | Só as portas dos protocolos usados, liberadas no compose (`ports`) e no firewall |
 

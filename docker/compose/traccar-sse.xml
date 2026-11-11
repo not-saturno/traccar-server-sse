@@ -16,6 +16,10 @@
 
     <entry key='database.registerUnknown'>false</entry>
 
+    <!-- Only the protocols in use: Watch (GPS trackers, TCP 5093) and OsmAnd (5055 / HTTPS).
+         Without this Traccar opens a port for every supported protocol. -->
+    <entry key='protocols.enable'>watch,osmand</entry>
+
     <entry key='public.enable'>true</entry>
     <entry key='public.features'>devices,positions,stream</entry>
 
