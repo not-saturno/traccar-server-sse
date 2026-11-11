@@ -2,7 +2,7 @@
 #
 #   docker compose -f docker/compose/traccar-sse-caddy.yaml up -d --build
 #
-# SERVER_NAME and ACME_EMAIL are read from the environment or from docker/compose/.env.
+# SERVER_NAME (domain or public IP), ACME_EMAIL and TLS_MODE are read from the environment or docker/compose/.env.
 # Uses the same project name and volumes as traccar-sse.yaml (nginx), so the database carries over.
 
 name: traccar-sse
@@ -35,8 +35,10 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
-      SERVER_NAME: ${SERVER_NAME:?set SERVER_NAME to the public domain}
+      SERVER_NAME: ${SERVER_NAME:?set SERVER_NAME to the domain or the server public IP}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL for certificate expiry notices}
+      # acme (domain, default) | ip (public IP, no domain) | internal (private IP). See docker/caddy/Caddyfile
+      TLS_MODE: ${TLS_MODE:-acme}
     volumes:
       - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       # Certificates and ACME account. Keep this volume, or every restart asks for a new certificate.

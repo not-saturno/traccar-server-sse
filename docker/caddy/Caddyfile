@@ -1,15 +1,42 @@
-# Reverse proxy for traccar-server-sse with automatic HTTPS (Let's Encrypt / ZeroSSL issuance and renewal).
-# See docs/deploy.md.
+# Reverse proxy for traccar-server-sse with automatic HTTPS. See docs/deploy.md and docs/imagem-docker.md.
 #
 # Environment:
-#   SERVER_NAME  public domain, e.g. onibus.exemplo.ufpa.br (its DNS must point to this server)
+#   SERVER_NAME  public domain (e.g. onibus.exemplo.ufpa.br, DNS pointing to this server) or the server public IP
 #   ACME_EMAIL   contact for certificate expiry notices
+#   TLS_MODE     how the certificate is obtained (default acme):
+#                  acme      domain: Let's Encrypt / ZeroSSL, 90 days, renewed automatically
+#                  ip        public IP without a domain: Let's Encrypt "shortlived" profile (~6 days, renewed
+#                            automatically). Ports 80 and 443 must be reachable from the internet
+#                  internal  private IP or no internet access to 80/443: Caddy's own CA, browsers show a warning
 
 {
 	email {$ACME_EMAIL}
 }
 
+# Certificate modes, picked by TLS_MODE ({$...} is replaced before the Caddyfile is parsed)
+(tls-acme) {
+	# Caddy's automatic HTTPS for the domain in SERVER_NAME
+}
+
+(tls-ip) {
+	tls {
+		# Only Let's Encrypt's "shortlived" profile issues certificates for IP addresses.
+		# Explicit issuer: with a profile set, every configured CA must support it (no ZeroSSL fallback)
+		issuer acme {
+			dir https://acme-v02.api.letsencrypt.org/directory
+			email {$ACME_EMAIL}
+			profile shortlived
+		}
+	}
+}
+
+(tls-internal) {
+	tls internal
+}
+
 {$SERVER_NAME} {
+	import tls-{$TLS_MODE:acme}
+
 	request_body {
 		max_size 10MB
 	}
