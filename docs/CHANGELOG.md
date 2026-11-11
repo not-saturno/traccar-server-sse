@@ -5,6 +5,11 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Front: tela de usuários para o administrador (`/settings/users`): lista, cadastro (nome, e-mail, senha,
+  administrador) e exclusão; item "Usuários" no menu só para administrador. O cadastro envia `deviceLimit: -1`
+  (padrão do autocadastro), senão o usuário criado não poderia cadastrar dispositivos.
+- Front: no relatório, "Análise de Instante" e o mapa do trajeto viraram cards separados, em largura total.
+  No celular, o mapa ficava com altura 0 (`h-full` com os cards empilhados) e não aparecia.
 - Exportação da imagem Docker: `setup/docker-export.sh` gera a imagem com as tags `<versão>` (padrão
   `<build.gradle>-<commit>[-dirty]`) e `latest` (sempre a última), exporta para `dist/docker/` com checksum e
   inclui o compose `docker/compose/traccar-sse-image.yaml` (roda a partir da imagem, atrás do Caddy).

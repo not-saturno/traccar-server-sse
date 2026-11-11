@@ -28,6 +28,7 @@ git submodule update --init --remote traccar-web
 | `/login` | Sim (vai para `/register` se o servidor não tem usuários) | Redireciona para `/` |
 | `/register` | Só no primeiro acesso ou com cadastro aberto (ver abaixo) | Idem |
 | `/settings/**` (relatórios, novo, dispositivos, editar, conta) | Redireciona para `/login?redirect=...` | Sim |
+| `/settings/users` (cadastro de usuários) | Redireciona para `/login` | **Só administrador**; os demais voltam para `/settings/reports` |
 
 - Menu do mapa: o visitante vê **MAPA** e **ENTRAR**. O usuário logado vê também **RELATÓRIOS**, **CONFIGURAR**,
   **CONTA** e **SAIR**.
