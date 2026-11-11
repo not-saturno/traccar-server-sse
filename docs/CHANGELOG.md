@@ -5,6 +5,12 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Exportação da imagem Docker: `setup/docker-export.sh` gera a imagem com as tags `<versão>` (padrão
+  `<build.gradle>-<commit>[-dirty]`) e `latest` (sempre a última), exporta para `dist/docker/` com checksum e
+  inclui o compose `docker/compose/traccar-sse-image.yaml` (roda a partir da imagem, atrás do Caddy).
+  `Dockerfile.sse` grava versão e commit em labels. Ver [imagem-docker.md](imagem-docker.md).
+- Caddy: `TLS_MODE` no `Caddyfile` e nos composes, com `acme` (domínio, padrão), `ip` (IP público sem domínio,
+  certificado Let's Encrypt `shortlived` de ~6 dias) e `internal` (IP privado, CA própria do Caddy).
 - Protocolo Watch (GPS dos ônibus, TCP 5093): porta publicada nos composes e no `Dockerfile.sse`;
   `protocols.enable=watch,osmand` nas configs de produção e dev; simulador `tools/watch-device.py`. Na Cloudflare
   o Watch vai direto ao IP do servidor (TCP não passa pelo túnel). Ver [cloudflare.md](cloudflare.md) e

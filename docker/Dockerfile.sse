@@ -23,6 +23,12 @@ RUN jlink --add-modules java.se,jdk.charsets,jdk.crypto.ec,jdk.net,jdk.unsupport
     --strip-debug --no-header-files --no-man-pages --compress=zip-6 --output /jre
 
 FROM debian:stable-slim
+# Set by setup/docker-export.sh; visible with docker inspect
+ARG VERSION=dev
+ARG REVISION=unknown
+LABEL org.opencontainers.image.title="traccar-sse" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}"
 WORKDIR /opt/traccar
 COPY --from=jre /jre jre
 COPY --from=backend /build/target/tracker-server.jar ./

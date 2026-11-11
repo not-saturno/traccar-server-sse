@@ -1,0 +1,57 @@
+# traccar-server-sse from an exported image (no build on the server), behind Caddy. See docs/imagem-docker.md.
+#
+# On the build machine:   setup/docker-export.sh            -> dist/docker/
+# On the server:          docker load -i images/traccar-sse-<version>.tar.gz
+#                         docker compose -f compose/traccar-sse-image.yaml up -d
+#
+# Read from the environment or from compose/.env:
+#   SERVER_NAME      domain, or the server public IP while there is no domain
+#   ACME_EMAIL       contact for certificate expiry notices
+#   TLS_MODE         acme (domain, default) | ip (public IP, Let's Encrypt short-lived) | internal (private IP)
+#   TRACCAR_SSE_TAG  image tag, default latest (the last exported version)
+# Uses the same project name and volumes as the other production compose files, so the database carries over.
+
+name: traccar-sse
+
+services:
+
+  traccar:
+    image: traccar-sse:${TRACCAR_SSE_TAG:-latest}
+    pull_policy: never # the image comes from docker load, not from a registry
+    restart: unless-stopped
+    ports:
+      # Web only on loopback (local checks); the public access is through Caddy on 80/443
+      - "127.0.0.1:8082:8082"
+      # Watch protocol (GPS trackers): raw TCP straight to the server, not through Caddy
+      - "5093:5093"
+      # Uncomment for OsmAnd trackers that send straight to the server
+      # - "5055:5055"
+    volumes:
+      - ./traccar-sse.xml:/opt/traccar/conf/traccar.xml:ro
+      - traccar-data:/opt/traccar/data
+      - traccar-logs:/opt/traccar/logs
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - traccar
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SERVER_NAME: ${SERVER_NAME:?set SERVER_NAME to the domain or the server public IP}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL for certificate expiry notices}
+      TLS_MODE: ${TLS_MODE:-acme}
+    volumes:
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and ACME account. Keep this volume, or every restart asks for a new certificate.
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  traccar-data:
+  traccar-logs:
+  caddy-data:
+  caddy-config:

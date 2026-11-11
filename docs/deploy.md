@@ -28,6 +28,7 @@ Arquivos:
 | `.dockerignore` | Limita o contexto do build ao que a imagem precisa |
 | `setup/build-dist.sh` | Pacote `.tar.gz` com Java embutido, para rodar no host sem Docker (`setup/build-dist.sh --help`) |
 
+> Levar a imagem pronta para o servidor, sem compilar nele: ver [imagem-docker.md](imagem-docker.md).
 > Publicar pela Cloudflare (sem abrir portas, HTTPS da Cloudflare): ver [cloudflare.md](cloudflare.md).
 
 ## Escolha do cenário
@@ -75,6 +76,11 @@ docker compose -f docker/compose/traccar-sse-caddy.yaml logs -f caddy
 
 No log, procure `certificate obtained successfully`. A partir daí `https://<SERVER_NAME>` já responde, e o HTTP
 redireciona para HTTPS (308).
+
+**Sem domínio ainda?** Use o IP público em `SERVER_NAME` e `TLS_MODE=ip` no `.env`: o Caddy pede ao Let's
+Encrypt um certificado para o IP (perfil `shortlived`, ~6 dias, renovado automaticamente; portas 80/443
+acessíveis pela internet). Para IP privado, `TLS_MODE=internal` (CA própria do Caddy; o navegador avisa).
+Detalhes em [imagem-docker.md](imagem-docker.md#certificado-sem-domínio-só-ip).
 
 **O que o `Caddyfile` faz**
 
