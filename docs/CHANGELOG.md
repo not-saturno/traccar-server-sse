@@ -5,7 +5,8 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
-- `docs/tk915.md`: comandos SMS do rastreador TKSTAR TK915 (manual oficial 2G/4G e comandos do fornecedor),
+- `docs/tk915.md`: comandos SMS do rastreador TKSTAR TK915 (manual oficial 2G/4G, gist da comunidade com comentários
+  e comandos do fornecedor, separados por fonte),
   passo a passo para apontá-lo a este servidor (protocolo `watch`, porta 5093), resposta de posição, luzes,
   comandos pelo servidor e problemas comuns.
 - Front: tela de usuários para o administrador (`/settings/users`): lista, cadastro (nome, e-mail, senha,

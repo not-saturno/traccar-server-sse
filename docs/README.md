@@ -9,7 +9,7 @@ Documentação das funcionalidades e alterações desta fork em relação ao
 | [sse.md](sse.md) | Stream SSE autenticado (`/api/sse`), comparação com o WebSocket, teste de carga e recomendação |
 | [frontend.md](frontend.md) | Submódulo `traccar-web` (gps-tracker-front): rotas, sessão, execução local, build |
 | [suavizacao.md](suavizacao.md) | Suavização de localização: algoritmo de referência e o que foi implementado (animação da troca de ponto no front) |
-| [tk915.md](tk915.md) | Rastreador TKSTAR TK915 dos ônibus: comandos SMS (manual oficial e fornecedor), configuração para este servidor, comandos pelo servidor |
+| [tk915.md](tk915.md) | Rastreador TKSTAR TK915 dos ônibus: comandos SMS (manual oficial, gist da comunidade e fornecedor), configuração para este servidor, comandos pelo servidor |
 | [osmand-security.md](osmand-security.md) | Segurança dos protocolos dos rastreadores: OsmAnd e Watch (o dos GPS dos ônibus) |
 | [desenvolvimento.md](desenvolvimento.md) | Desenvolvimento: modo dev via Docker (hot reload, depurador, portas) ou direto no host |
 | [cloudflare.md](cloudflare.md) | Publicar na Cloudflare via Cloudflare Tunnel (produção e dev), limites e ajustes do painel |
