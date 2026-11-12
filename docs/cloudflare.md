@@ -94,9 +94,8 @@ O que é preciso:
 3. Opcional: um registro DNS `gps.seudominio.com` do tipo **A** apontando para o IP do servidor, com o proxy
    **desligado ("DNS only", nuvem cinza)**. Com o proxy ligado, a porta 5093 não funciona. Também dá para usar o
    IP direto no rastreador.
-4. No rastreador, configure o servidor `gps.seudominio.com` (ou o IP) na porta `5093`. Em muitos relógios/GPS
-   desse padrão isso é feito por SMS (ex.: `pw,123456,ip,<IP-ou-domínio>,5093#`), mas o comando e a senha
-   variam por fabricante: confira o manual.
+4. No rastreador, configure o servidor na porta `5093`. No **TK915** (o rastreador dos ônibus) é por SMS:
+   `adminip123456 <IP> 5093`. Ver [tk915.md](tk915.md#configurar-um-tk915-novo-para-este-servidor).
 5. No Traccar, cadastre o dispositivo com o **identificador do rastreador** (normalmente 10 dígitos, derivado do
    IMEI). Ele aparece na primeira linha de cada mensagem (`[3G*9031853319*...]`). Também aparece no log do
    servidor como `Unknown device - <id>` quando o rastreador conecta antes de ser cadastrado.

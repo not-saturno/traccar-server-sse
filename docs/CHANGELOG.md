@@ -5,6 +5,9 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- `docs/tk915.md`: comandos SMS do rastreador TKSTAR TK915 (manual oficial 2G/4G e comandos do fornecedor),
+  passo a passo para apontá-lo a este servidor (protocolo `watch`, porta 5093), resposta de posição, luzes,
+  comandos pelo servidor e problemas comuns.
 - Front: tela de usuários para o administrador (`/settings/users`): lista, cadastro (nome, e-mail, senha,
   administrador) e exclusão; item "Usuários" no menu só para administrador. O cadastro envia `deviceLimit: -1`
   (padrão do autocadastro), senão o usuário criado não poderia cadastrar dispositivos.
