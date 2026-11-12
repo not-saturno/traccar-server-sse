@@ -5,6 +5,11 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Administrador vê todos os dispositivos, os já criados e os futuros, inclusive os cadastrados por outros
+  usuários. Antes via só os vinculados a ele. Front: `src/api/devices.ts` usa `?all=true` para administrador no
+  mapa, em Dispositivos, nos Relatórios e na edição. Backend: o `/api/sse` do administrador usa o listener global
+  (posições e status de todos, sem duplicar) e mantém os eventos do próprio usuário. Usuário comum não muda. Ver
+  [sse.md](sse.md#administrador-todos-os-dispositivos).
 - Front: troca da própria senha em **Conta** (pede a senha atual) e salvamento de nome e e-mail; antes o botão
   só fazia `console.log`. Os painéis sem função ("Preferências", "Localização", "Deletar conta") foram removidos.
 - Front: na tela de **Usuários**, o administrador vincula e desvincula dispositivos de usuários comuns (vale na

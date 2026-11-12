@@ -24,7 +24,7 @@ git submodule update --init --remote traccar-web
 
 | Rota | Sem login | Logado |
 |---|---|---|
-| `/` (mapa + lista de ônibus) | Só dispositivos públicos, via `/api/public/*` | Dispositivos da conta, via `/api/devices` + `/api/sse` |
+| `/` (mapa + lista de ônibus) | Só dispositivos públicos, via `/api/public/*` | Dispositivos da conta, via `/api/devices` + `/api/sse`. Administrador: todos (ver abaixo) |
 | `/login` | Sim (vai para `/register` se o servidor não tem usuários) | Redireciona para `/` |
 | `/register` | Só no primeiro acesso ou com cadastro aberto (ver abaixo) | Idem |
 | `/settings/**` (relatórios, novo, dispositivos, editar, conta) | Redireciona para `/login?redirect=...` | Sim |
@@ -37,6 +37,20 @@ git submodule update --init --remote traccar-web
   sessão uma vez por carregamento (`GET /api/session`).
 - Um `401` em rota protegida limpa a sessão e manda para o login.
 - O backend continua sendo a barreira real: o guard do front só melhora a UX.
+
+### Administrador vê todos os dispositivos
+
+No Traccar, `GET /api/devices` só devolve os dispositivos vinculados ao usuário, mesmo para administrador (quem
+cria um dispositivo é vinculado a ele). Por isso o administrador não via os ônibus cadastrados por outros usuários.
+Agora:
+
+- o front usa `src/api/devices.ts`: para administrador, `GET /devices?all=true` no mapa, em Dispositivos, nos
+  Relatórios e na edição (`/settings/<uniqueId>`, que procura na lista completa, porque a busca por `uniqueId` da
+  API ignora o `all`);
+- o `/api/sse` do administrador recebe posições e status de todos os dispositivos, inclusive dos criados depois
+  que ele abriu o mapa (ver [sse.md](sse.md#administrador-todos-os-dispositivos)).
+
+Usuário comum continua vendo só os dispositivos vinculados. Para dar acesso a um ônibus, vincule em **Usuários**.
 
 ### Cadastro (`/register`)
 
@@ -187,5 +201,4 @@ O repositório do front tem a documentação de desenvolvimento em `traccar-web/
 
 ## Pendências conhecidas do front
 
-- `settings/account.vue` ainda não salva alterações (o `handleSave` só faz `console.log`).
-- Outras pendências estão em `traccar-web/docs/desenvolvimento.md`.
+- Pendências estão em `traccar-web/docs/desenvolvimento.md`.

@@ -1,6 +1,7 @@
 # SSE autenticado (`/api/sse`)
 
-Stream Server-Sent Events com as atualizações em tempo real dos dispositivos **do usuário logado**. É o
+Stream Server-Sent Events com as atualizações em tempo real dos dispositivos **do usuário logado** (para o
+administrador, de **todos** os dispositivos; ver [abaixo](#administrador-todos-os-dispositivos)). É o
 equivalente SSE do WebSocket nativo `/api/socket`. Para visitantes sem login, veja o stream público em
 [public-access.md](public-access.md).
 
@@ -26,6 +27,21 @@ um cliente SSE que suporte headers.
 
 > Diferente do WebSocket, que só envia `logs` quando o cliente pede (`{"logs": true}`), o SSE autenticado envia
 > logs sempre. Os clientes devem ignorar o evento se não usarem.
+
+### Administrador: todos os dispositivos
+
+No Traccar, o listener de cada usuário só recebe os dispositivos vinculados a ele (`tc_user_device`), inclusive
+para administrador. O `/api/socket` nativo continua assim. No `/api/sse` desta fork, o administrador recebe:
+
+| Evento | Origem | Alcance |
+|---|---|---|
+| `positions`, `devices`, keepalive | listener global (`ConnectionManager.addGlobalListener`) | Todos os dispositivos, inclusive os criados depois da conexão |
+| `positions` ao conectar | `Condition.LatestPositions` sem filtro de usuário | Última posição de cada dispositivo |
+| `events`, `logs` | listener do usuário (`addListener(userId)`) | Como antes: só os do próprio administrador |
+
+Os eventos ficam no listener do usuário porque o `ConnectionManager` só os entrega por usuário. Como o listener do
+usuário ignora posições e status, não há posição duplicada para dispositivos vinculados ao administrador.
+Ao desconectar, os dois listeners são removidos.
 
 ## Comparação com o WebSocket nativo
 
@@ -116,7 +132,7 @@ broadcast do `ConnectionManager` (ver [public-access.md](public-access.md#limita
 
 | Arquivo | Papel |
 |---|---|
-| `src/main/java/org/traccar/api/resource/SseResource.java` | Endpoint `GET /api/sse` |
+| `src/main/java/org/traccar/api/resource/SseResource.java` | Endpoint `GET /api/sse` (caminho do administrador em `subscribeAdministrator`) |
 | `src/main/java/org/traccar/sse/PositionSseListener.java` | `ConnectionManager.UpdateListener` que escreve no `SseEventSink` e se remove quando o cliente desconecta |
 | `src/main/java/org/traccar/api/ApiResourceConfig.java` | Registra o `SseFeature` do Jersey |
 | `build.gradle` | Dependência `org.glassfish.jersey.media:jersey-media-sse` |
