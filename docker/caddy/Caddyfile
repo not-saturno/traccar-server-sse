@@ -11,6 +11,12 @@
 
 {
 	email {$ACME_EMAIL}
+
+	# Browsers send no SNI for https://<IP> (TLS forbids IPs in SNI). Without SNI Caddy picks the certificate by
+	# the connection's local IP, which inside Docker is the container IP (172.x), so nothing matches and the
+	# handshake fails (ERR_SSL_PROTOCOL_ERROR). This makes those connections use the SERVER_NAME certificate.
+	# No effect for domains: clients always send SNI for them.
+	default_sni {$SERVER_NAME}
 }
 
 # Certificate modes, picked by TLS_MODE ({$...} is replaced before the Caddyfile is parsed)

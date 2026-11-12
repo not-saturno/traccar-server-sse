@@ -134,6 +134,37 @@ TLS_MODE=ip
 Se o certificado não sair (o log do Caddy mostra erro de ACME), as causas comuns são a porta 80/443 fechada no
 firewall ou no roteador do campus, ou o IP configurado não ser o IP público da máquina.
 
+#### `ERR_SSL_PROTOCOL_ERROR` ao abrir `https://<IP>`
+
+A porta 443 responde, mas a negociação TLS falha. Para IP, o navegador não envia o nome do servidor (SNI), porque
+o TLS proíbe IP no SNI. Sem SNI, o Caddy escolhe o certificado pelo IP local da conexão, e dentro do Docker esse IP
+é o do container (`172.x`): nenhum certificado combina e a conexão é recusada. O `Caddyfile` resolve isso com
+`default_sni {$SERVER_NAME}`. Se a sua cópia no servidor é anterior a essa correção, acrescente no bloco global:
+
+```
+{
+	email {$ACME_EMAIL}
+	default_sni {$SERVER_NAME}
+}
+```
+
+E reinicie o Caddy: `docker compose -f compose/traccar-sse-image.yaml restart caddy`.
+
+Se continuar, verifique:
+
+```bash
+docker compose -f compose/traccar-sse-image.yaml ps                  # traccar e caddy "running"
+docker compose -f compose/traccar-sse-image.yaml exec caddy printenv SERVER_NAME TLS_MODE
+docker compose -f compose/traccar-sse-image.yaml logs caddy --tail 80  # "certificate obtained successfully" ou o erro de ACME
+echo | openssl s_client -connect <IP>:443 2>&1 | head -20             # de outra máquina: qual certificado (ou erro) a 443 entrega
+```
+
+- `SERVER_NAME` precisa ser **exatamente** o IP que você digita no navegador.
+- Enquanto o Caddy ainda está obtendo o certificado (primeiro minuto), a mesma mensagem pode aparecer. Espere o
+  `certificate obtained successfully` no log.
+- Se o log mostrar erro de ACME/perfil, use `TLS_MODE=internal` para confirmar que o resto funciona (o navegador
+  avisa, mas abre) e me mande o trecho do log.
+
 ### IP privado ou sem acesso pela internet: `TLS_MODE=internal`
 
 Nenhuma CA pública valida um IP que a internet não alcança. O Caddy usa a própria CA: o HTTPS funciona, mas o

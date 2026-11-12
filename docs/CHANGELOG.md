@@ -73,6 +73,9 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
   "Criar conta" segue a mesma regra.
 
 ### Corrigido
+- Caddy: `ERR_SSL_PROTOCOL_ERROR` ao abrir `https://<IP>` com `TLS_MODE=ip`/`internal` no Docker. Sem SNI (que
+  navegadores não enviam para IP), o Caddy escolhia o certificado pelo IP do container. Acrescentado
+  `default_sni {$SERVER_NAME}` no `Caddyfile`.
 - Front: no primeiro clique em um dispositivo (ou em qualquer mudança de zoom) o mapa voltava para o centro
   inicial. O `:center` era um array literal no template, recriado a cada renderização. Agora é a constante
   `INITIAL_CENTER`.
