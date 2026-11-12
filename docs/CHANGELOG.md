@@ -5,6 +5,13 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Front: troca da própria senha em **Conta** (pede a senha atual) e salvamento de nome e e-mail; antes o botão
+  só fazia `console.log`. Os painéis sem função ("Preferências", "Localização", "Deletar conta") foram removidos.
+- Front: na tela de **Usuários**, o administrador vincula e desvincula dispositivos de usuários comuns (vale na
+  hora, inclusive no mapa ao vivo) e redefine a senha de outros usuários.
+- Front: detalhes completos do dispositivo no mapa para o administrador (bateria, velocidade, direção, satélites,
+  sinal GSM, horários do GPS/aparelho/servidor, identificação e demais atributos), no popup do marcador e ao
+  clicar no ônibus da lista. Usuário comum e visitante continuam vendo o resumo.
 - `docs/tk915.md`: comandos SMS do rastreador TKSTAR TK915 (manual oficial 2G/4G, gist da comunidade com comentários
   e comandos do fornecedor, separados por fonte),
   passo a passo para apontá-lo a este servidor (protocolo `watch`, porta 5093), resposta de posição, luzes,

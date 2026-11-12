@@ -28,7 +28,8 @@ git submodule update --init --remote traccar-web
 | `/login` | Sim (vai para `/register` se o servidor não tem usuários) | Redireciona para `/` |
 | `/register` | Só no primeiro acesso ou com cadastro aberto (ver abaixo) | Idem |
 | `/settings/**` (relatórios, novo, dispositivos, editar, conta) | Redireciona para `/login?redirect=...` | Sim |
-| `/settings/users` (cadastro de usuários) | Redireciona para `/login` | **Só administrador**; os demais voltam para `/settings/reports` |
+| `/settings/users` (usuários) | Redireciona para `/login` | **Só administrador**: cadastrar, excluir, vincular dispositivos a usuários comuns e redefinir senhas. Os demais voltam para `/settings/reports` |
+| `/settings/account` (conta) | Redireciona para `/login` | Nome, e-mail e troca da própria senha (pede a senha atual) |
 
 - Menu do mapa: o visitante vê **MAPA** e **ENTRAR**. O usuário logado vê também **RELATÓRIOS**, **CONFIGURAR**,
   **CONTA** e **SAIR**.
@@ -87,6 +88,25 @@ Ajustes gerais:
 Na lista, cada item mostra o selo Online/Offline e o tempo desde o último sinal ("agora", "há 5 min",
 "há 2 h" ou a data). O tempo é atualizado a cada 10s. Dispositivo sem posição aparece como "Sem posição" e não é
 clicável.
+
+### Detalhes do dispositivo (administrador)
+
+Logado como **administrador**, o popup do ônibus no mapa mostra os dados completos (componente
+`traccar-web/src/components/DeviceDetails.vue`). Clicar no ônibus da lista também abre esse popup, depois que o mapa
+termina de centralizar.
+
+| Grupo | Dados |
+|---|---|
+| Posição | Velocidade (km/h), direção (graus e ponto cardeal), origem (GPS ou sem GPS), coordenadas, altitude, precisão, satélites, em movimento, distância total, endereço |
+| Aparelho | Bateria (%), sinal GSM, ignição, alarme, passos (só se maior que zero) |
+| Horários | Hora do GPS, hora do aparelho, recebida pelo servidor, último contato (com "há N min") |
+| Identificação | Identificador, status no servidor, protocolo, categoria, modelo, telefone, contato |
+| Outros dados | Qualquer outro atributo que o protocolo enviar |
+
+Só aparece o que o rastreador envia. Com o TK915 (protocolo `watch`) vêm bateria, sinal GSM, satélites,
+velocidade, direção, altitude e GPS válido; o Traccar acrescenta os horários, a distância e o movimento. Os dados
+vêm do stream autenticado (`/api/sse`) e de `GET /api/devices`. **Usuário comum e visitante** continuam vendo só o
+resumo (nome e horário do último sinal), e o stream público não envia esses dados.
 
 ### Seguir um ônibus
 
