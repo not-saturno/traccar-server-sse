@@ -37,6 +37,9 @@ git submodule update --init --remote traccar-web
 - A sessão é o cookie `JSESSIONID` do Traccar (`POST /api/session`). O store `src/stores/session.ts` restaura a
   sessão uma vez por carregamento (`GET /api/session`).
 - Um `401` em rota protegida limpa a sessão e manda para o login.
+- Erro de login aparece no próprio formulário, com os campos em vermelho: campos vazios, "E-mail ou senha
+  incorretos" (`401`), usuário desativado ou conta expirada (`400` com o texto da exceção do Traccar) e sem conexão.
+  Antes o login chamava um toast, mas a página não monta `<Toast />`, e nada aparecia.
 - O backend continua sendo a barreira real: o guard do front só melhora a UX.
 
 ### Administrador vê todos os dispositivos
@@ -133,12 +136,14 @@ novo está falando com o servidor, com qual identificador e o que o servidor ent
   há endpoint REST: só aparece o que chegar com a tela aberta, e nada fica salvo.
 - Alcance: usuário comum vê os logs dos dispositivos vinculados a ele; administrador, os de **todos** (ver
   [sse.md](sse.md#administrador-todos-os-dispositivos)).
-- Duas visualizações (botões **Terminal** e **Detalhes**; a escolha fica salva no navegador, `localStorage`
+- Duas visualizações (botões **Lista** e **Detalhes**; a escolha fica salva no navegador, `localStorage`
   `logs.view`):
-  - **Terminal** (padrão): estilo `tail -f`, uma linha por mensagem, mais antiga em cima:
-    `HH:MM:SS.mmm [protocolo] IP dispositivo > mensagem`, com `└ posição lat, lon` embaixo quando a mensagem gerou
-    posição. Dispositivo cadastrado em verde e não cadastrado em laranja. Acompanha o fim sozinho; se você rolar
-    para cima, ele para e aparece o botão "N NOVAS" para voltar. Clicar numa linha abre os detalhes num diálogo.
+  - **Lista** (padrão): uma linha por mensagem, nas cores das outras telas. A mais recente entra embaixo e a lista
+    sobe, como num terminal, sem imitar um. Cada linha: hora, nome do dispositivo, identificador, protocolo, tipo
+    da mensagem, IP e, à direita, as coordenadas da posição gerada (quando houver); a mensagem bruta embaixo. A
+    linha nova pisca em verde-claro (desligado com `prefers-reduced-motion`). Acompanha o fim sozinha; se você
+    rolar para cima, ela para e aparece o botão "N NOVAS" para voltar. Clicar numa linha abre os detalhes num
+    diálogo.
   - **Detalhes**: um cartão por mensagem, mais recente primeiro, já com os detalhes abertos (50 por vez, com
     "Mostrar mais").
 - Detalhes (`traccar-web/src/components/LogDetails.vue`), no mesmo formato do popup do administrador no mapa:

@@ -5,8 +5,8 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
-- Front: tela **Logs** com visualização **Terminal** (estilo `tail -f`, cores por campo, acompanha o fim, clique
-  abre os detalhes) e **Detalhes** (cartões). Os detalhes de cada mensagem seguem o formato do popup do mapa: dados
+- Front: tela **Logs** com visualização **Lista** (uma linha por mensagem, a mais recente embaixo, acompanha o
+  fim, clique abre os detalhes) e **Detalhes** (cartões). Os detalhes de cada mensagem seguem o formato do popup do mapa: dados
   da mensagem (tipo, formato, tamanho, IP, horário do servidor) e o `DeviceDetails` com a posição gerada por
   aquela mensagem. Backend: `LogRecord` ganhou `time` (quando o servidor leu a mensagem), usado para ligar o log à
   posição. Ver [frontend.md](frontend.md#logs-em-tempo-real-settingslogs).
@@ -95,6 +95,8 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
   "Criar conta" segue a mesma regra.
 
 ### Corrigido
+- Front: erro de login (senha errada, campos vazios, usuário desativado, sem conexão) não aparecia: a página
+  chamava um toast sem `<Toast />` montado. Agora a mensagem fica no formulário.
 - Caddy: `ERR_SSL_PROTOCOL_ERROR` ao abrir `https://<IP>` com `TLS_MODE=ip`/`internal` no Docker. Sem SNI (que
   navegadores não enviam para IP), o Caddy escolhia o certificado pelo IP do container. Acrescentado
   `default_sni {$SERVER_NAME}` no `Caddyfile`.
