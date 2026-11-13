@@ -5,8 +5,21 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
-- Front: tela **Logs** com visualização **Lista** (uma linha por mensagem, a mais recente embaixo, acompanha o
-  fim, clique abre os detalhes) e **Detalhes** (cartões). Os detalhes de cada mensagem seguem o formato do popup do mapa: dados
+- Buffer de reordenação adaptativo: posições ao vivo (horário do GPS a até `server.buffering.liveTolerance`, padrão
+  10 s, do servidor, e em ordem) são liberadas na hora; só históricas ou fora de ordem esperam
+  `server.buffering.threshold` (3 s). A posição ao vivo deixou de chegar ~3 s depois da mensagem. `0` volta ao
+  comportamento original. Ver [processamento.md](processamento.md).
+- `DistanceHandler`: posição fora de ordem tem a distância medida a partir da posição anterior por horário, não da
+  mais nova. Contadores de posições ao vivo, retidas e fora de ordem no painel **Desempenho**.
+- Medição do tempo de processamento das posições, etapa por etapa (buffer, fila, cada handler, pós-processamento,
+  total): `ProcessingTimings`, instrumentação no `ProcessingHandler` e `GET`/`DELETE /api/processing/timings`
+  (administrador). Front: painel **Desempenho** na tela Logs e, em cada linha, "aguardando posição…" e depois o
+  tempo até a posição chegar ("+3 s"). Resultado: o atraso de ~3 s é o buffer de reordenação
+  (`server.buffering.threshold`, padrão do Traccar 3000 ms); os handlers somam milissegundos. Ver
+  [processamento.md](processamento.md).
+- Front: tela **Logs** em lista (uma linha por mensagem, a mais recente embaixo, clique abre os detalhes), com
+  **Seguir** (fica na última mensagem; rolar para cima desliga) e máximo de linhas configurável (100 a 5.000,
+  salvo no navegador). Os detalhes de cada mensagem seguem o formato do popup do mapa: dados
   da mensagem (tipo, formato, tamanho, IP, horário do servidor) e o `DeviceDetails` com a posição gerada por
   aquela mensagem. Backend: `LogRecord` ganhou `time` (quando o servidor leu a mensagem), usado para ligar o log à
   posição. Ver [frontend.md](frontend.md#logs-em-tempo-real-settingslogs).

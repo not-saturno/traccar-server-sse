@@ -136,16 +136,27 @@ novo está falando com o servidor, com qual identificador e o que o servidor ent
   há endpoint REST: só aparece o que chegar com a tela aberta, e nada fica salvo.
 - Alcance: usuário comum vê os logs dos dispositivos vinculados a ele; administrador, os de **todos** (ver
   [sse.md](sse.md#administrador-todos-os-dispositivos)).
-- Duas visualizações (botões **Lista** e **Detalhes**; a escolha fica salva no navegador, `localStorage`
-  `logs.view`):
-  - **Lista** (padrão): uma linha por mensagem, nas cores das outras telas. A mais recente entra embaixo e a lista
-    sobe, como num terminal, sem imitar um. Cada linha: hora, nome do dispositivo, identificador, protocolo, tipo
-    da mensagem, IP e, à direita, as coordenadas da posição gerada (quando houver); a mensagem bruta embaixo. A
-    linha nova pisca em verde-claro (desligado com `prefers-reduced-motion`). Acompanha o fim sozinha; se você
-    rolar para cima, ela para e aparece o botão "N NOVAS" para voltar. Clicar numa linha abre os detalhes num
-    diálogo.
-  - **Detalhes**: um cartão por mensagem, mais recente primeiro, já com os detalhes abertos (50 por vez, com
-    "Mostrar mais").
+- Lista: uma linha por mensagem, nas cores das outras telas. A mais recente entra embaixo e a lista sobe, como num
+  terminal, sem imitar um. Cada linha: hora, nome do dispositivo, identificador, protocolo, tipo da mensagem, IP e,
+  à direita, as coordenadas da posição gerada (quando houver); a mensagem bruta embaixo. A linha nova pisca em
+  verde-claro (desligado com `prefers-reduced-motion`). Clicar numa linha abre os detalhes num diálogo.
+- Posição na linha: enquanto a posição da mensagem não chega, aparece "aguardando posição…"; quando chega, as
+  coordenadas e quanto ela demorou depois da mensagem, medido no relógio do navegador entre a chegada do log e a da
+  posição. Com o buffer adaptativo, a posição ao vivo sai junto ou até antes do log e a linha mostra "na hora";
+  posição histórica ou fora de ordem mostra o tempo do buffer ("+3 s"). Depois de 15 s sem posição, "sem posição"
+  (mensagem que não gera posição, posição filtrada, posição mais antiga que a última do aparelho, que é gravada mas
+  não vai ao mapa, ou mensagem anterior à tela). O diálogo de detalhes mostra o mesmo tempo em "Posição chegou".
+- **Desempenho** (botão, só administrador): painel com o tempo de cada etapa do processamento de posições no
+  servidor (`GET /api/processing/timings`, ver [processamento.md](processamento.md)), atualizado a cada 5 s, com
+  média recente, p95, máximo, número de execuções, uma barra por etapa e **Zerar**. Mostra a etapa mais lenta e,
+  quando é o buffer de reordenação, explica a opção `server.buffering.threshold`. Componente
+  `traccar-web/src/components/ProcessingTimings.vue`.
+- **Seguir** (botão com cadeado, ligado por padrão, verde quando ligado): mantém a lista cravada na última
+  mensagem. Rolar para cima desliga sozinho, para você ler sem a lista pular; aparece então o botão "N NOVAS" (ou
+  "IR PARA A ÚLTIMA"), que volta ao fim e religa. Rolar de volta até o fim também religa.
+- **Máximo de linhas**: seletor com 100, 250, 500, 1.000 (padrão), 2.000 ou 5.000, salvo no navegador
+  (`localStorage` `logs.maxLines`). Acima do limite, as linhas mais antigas saem; diminuir o limite corta na hora.
+  O cabeçalho da lista mostra "N de M linhas".
 - Detalhes (`traccar-web/src/components/LogDetails.vue`), no mesmo formato do popup do administrador no mapa:
   - **Mensagem**: a mensagem bruta (com copiar), hora em que o servidor a leu (com milissegundos), protocolo, tipo
     (no `watch`: `LK` heartbeat, `UD` posição, `AL` alarme etc.), IP de origem, identificador, formato (texto ou
@@ -154,17 +165,19 @@ novo está falando com o servidor, com qual identificador e o que o servidor ent
     **posição gerada por aquela mensagem**, não a última do dispositivo. Mensagem que não gerou posição mostra o
     aviso. Aqui os detalhes aparecem para qualquer usuário logado, porque ele só recebe logs dos próprios
     dispositivos.
-- Associação mensagem → posição: o servidor processa a posição depois do log, às vezes segundos e outras
-  mensagens depois, então a ordem de chegada não serve. O `LogRecord` desta fork traz `time` (quando o servidor
-  leu a mensagem), e a posição decodificada dela recebe `serverTime` logo em seguida, na mesma leitura. A tela liga
-  cada posição à última mensagem do dispositivo com `time <= serverTime` (até 2 s antes). Mensagem com várias
+- Associação mensagem → posição: a ordem de chegada não serve, porque a posição pode sair antes do log (ao vivo,
+  buffer adaptativo) ou segundos depois (retida no buffer). O `LogRecord` desta fork traz `time` (quando o servidor
+  leu a mensagem), e a posição decodificada dela recebe `serverTime` logo em seguida, na mesma leitura (medido: 0 a
+  2 ms, até ~20 ms na primeira mensagem da conexão). A tela liga cada posição à última mensagem do dispositivo com
+  `time <= serverTime` até 100 ms antes. Posição que chega antes do log espera por ele até 5 s. A janela fica bem
+  abaixo do intervalo entre mensagens, senão a posição de uma mensagem cairia na anterior. Mensagem com várias
   posições fica com a primeira.
-- Rastreador **não cadastrado** aparece com o selo "NÃO CADASTRADO" (laranja no terminal) e o botão
+- Rastreador **não cadastrado** aparece com o selo "NÃO CADASTRADO" e o botão
   **Cadastrar**, que abre `/settings/new` com o identificador preenchido (`?uniqueId=`). Só aparece se o servidor
   tiver `web.showUnknownDevices=true`, e o Traccar envia só a primeira mensagem dessa conexão.
 - Filtro por dispositivo (todos, não cadastrados ou um específico) e busca no conteúdo, identificador, IP ou nome.
-- **Pausar** congela a lista e acumula o que chegar (o botão mostra quantos); **Continuar** junta tudo. **Limpar**
-  apaga a lista. A tela guarda no máximo 1000 registros.
+- **Pausar** congela a lista e acumula o que chegar (o botão mostra quantos, até o máximo de linhas); **Continuar**
+  junta tudo. **Limpar** apaga a lista.
 - O indicador mostra "Ao vivo", "Reconectando" ou "Pausado". O `EventSource` reconecta sozinho, mas o que chegar
   no intervalo se perde.
 

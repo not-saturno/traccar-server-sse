@@ -59,15 +59,18 @@ import org.traccar.handler.network.AcknowledgementHandler;
 import org.traccar.helper.PositionLogger;
 import org.traccar.model.Position;
 import org.traccar.session.cache.CacheManager;
+import org.traccar.timing.ProcessingTimings;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.WeakHashMap;
 import java.util.stream.Stream;
 
 @Singleton
@@ -81,8 +84,15 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
     private final List<BasePositionHandler> positionHandlers;
     private final List<BaseEventHandler> eventHandlers;
     private final PostProcessHandler postProcessHandler;
+    private final ProcessingTimings timings;
 
-    private record QueuedPosition(ChannelHandlerContext ctx, Position position) {}
+    // Fork: nanoTime when the position reached this handler and when the buffer released it, for the timings
+    private record Times(long received, long released) {}
+
+    private record QueuedPosition(ChannelHandlerContext ctx, Position position, Times times) {}
+
+    // Fork: arrival time while the position waits in the buffer (Position has no equals, so this is by identity)
+    private final Map<Position, Long> receivedAt = Collections.synchronizedMap(new WeakHashMap<>());
 
     private final Map<Long, Queue<QueuedPosition>> queues = new HashMap<>();
 
@@ -93,11 +103,13 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
     @Inject
     public ProcessingHandler(
             Injector injector, Config config,
-            CacheManager cacheManager, NotificationManager notificationManager, PositionLogger positionLogger) {
+            CacheManager cacheManager, NotificationManager notificationManager, PositionLogger positionLogger,
+            ProcessingTimings timings) {
         this.cacheManager = cacheManager;
+        this.timings = timings;
         this.notificationManager = notificationManager;
         this.positionLogger = positionLogger;
-        bufferingManager = new BufferingManager(config, this);
+        bufferingManager = new BufferingManager(config, this, timings);
 
         positionHandlers = Stream.of(
                 ComputedAttributesHandler.Early.class,
@@ -141,12 +153,22 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
                 .toList();
 
         postProcessHandler = injector.getInstance(PostProcessHandler.class);
+
+        timings.register(ProcessingTimings.BUFFER, ProcessingTimings.Kind.STAGE);
+        timings.register(ProcessingTimings.QUEUE, ProcessingTimings.Kind.STAGE);
+        positionHandlers.forEach(handler -> timings.register(
+                ProcessingTimings.nameOf(handler.getClass()), ProcessingTimings.Kind.POSITION_HANDLER));
+        eventHandlers.forEach(handler -> timings.register(
+                ProcessingTimings.nameOf(handler.getClass()), ProcessingTimings.Kind.EVENT_HANDLER));
+        timings.register(ProcessingTimings.POST_PROCESS, ProcessingTimings.Kind.STAGE);
+        timings.register(ProcessingTimings.TOTAL, ProcessingTimings.Kind.STAGE);
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof Position position) {
             cacheManager.addDevice(position.getDeviceId(), position);
+            receivedAt.put(position, System.nanoTime());
             bufferingManager.accept(ctx, position);
         } else {
             super.channelRead(ctx, msg);
@@ -155,31 +177,48 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
 
     @Override
     public void onReleased(ChannelHandlerContext context, Position position) {
+        long released = System.nanoTime();
+        Long received = receivedAt.remove(position);
+        if (received != null) {
+            timings.record(ProcessingTimings.BUFFER, ProcessingTimings.Kind.STAGE, released - received);
+        }
+        Times times = new Times(received != null ? received : released, released);
         Queue<QueuedPosition> queue = getQueue(position.getDeviceId());
         boolean queued;
         synchronized (queue) {
             queued = !queue.isEmpty();
-            queue.offer(new QueuedPosition(context, position));
+            queue.offer(new QueuedPosition(context, position, times));
         }
         if (!queued) {
-            processPositionHandlers(context, position);
+            processPositionHandlers(context, position, times);
         }
     }
 
-    private void processPositionHandlers(ChannelHandlerContext ctx, Position position) {
+    // Fork: times each handler from the call until its callback (handlers may finish asynchronously)
+    private void handleTimed(BasePositionHandler handler, Position position, BasePositionHandler.Callback callback) {
+        String name = ProcessingTimings.nameOf(handler.getClass());
+        long start = System.nanoTime();
+        handler.handlePosition(position, filtered -> {
+            timings.record(name, ProcessingTimings.Kind.POSITION_HANDLER, System.nanoTime() - start);
+            callback.processed(filtered);
+        });
+    }
+
+    private void processPositionHandlers(ChannelHandlerContext ctx, Position position, Times times) {
+        timings.record(ProcessingTimings.QUEUE, ProcessingTimings.Kind.STAGE, System.nanoTime() - times.released());
         var iterator = positionHandlers.iterator();
-        iterator.next().handlePosition(position, new BasePositionHandler.Callback() {
+        handleTimed(iterator.next(), position, new BasePositionHandler.Callback() {
             @Override
             public void processed(boolean filtered) {
                 Runnable continuation = () -> {
                     if (!filtered) {
                         if (iterator.hasNext()) {
-                            iterator.next().handlePosition(position, this);
+                            handleTimed(iterator.next(), position, this);
                         } else {
-                            processEventHandlers(ctx, position);
+                            processEventHandlers(ctx, position, times);
                         }
                     } else {
-                        finishedProcessing(ctx, position, true);
+                        finishedProcessing(ctx, position, true, times);
                     }
                 };
                 if (ctx.executor().inEventLoop()) {
@@ -191,15 +230,24 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
         });
     }
 
-    private void processEventHandlers(ChannelHandlerContext ctx, Position position) {
-        eventHandlers.forEach(handler -> handler.analyzePosition(
-                position, (event) -> notificationManager.updateEvents(Map.of(event, position))));
-        finishedProcessing(ctx, position, false);
+    private void processEventHandlers(ChannelHandlerContext ctx, Position position, Times times) {
+        eventHandlers.forEach(handler -> {
+            long start = System.nanoTime();
+            handler.analyzePosition(
+                    position, (event) -> notificationManager.updateEvents(Map.of(event, position)));
+            timings.record(ProcessingTimings.nameOf(handler.getClass()),
+                    ProcessingTimings.Kind.EVENT_HANDLER, System.nanoTime() - start);
+        });
+        finishedProcessing(ctx, position, false, times);
     }
 
-    private void finishedProcessing(ChannelHandlerContext ctx, Position position, boolean filtered) {
+    private void finishedProcessing(ChannelHandlerContext ctx, Position position, boolean filtered, Times times) {
         if (!filtered) {
+            long start = System.nanoTime();
             postProcessHandler.handlePosition(position, ignore -> {
+                long now = System.nanoTime();
+                timings.record(ProcessingTimings.POST_PROCESS, ProcessingTimings.Kind.STAGE, now - start);
+                timings.record(ProcessingTimings.TOTAL, ProcessingTimings.Kind.STAGE, now - times.received());
                 positionLogger.log(ctx, position);
                 ctx.writeAndFlush(new AcknowledgementHandler.EventHandled(position));
                 processNextPosition(position.getDeviceId());
@@ -219,7 +267,8 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
             next = queue.peek();
         }
         if (next != null) {
-            next.ctx().executor().execute(() -> processPositionHandlers(next.ctx(), next.position()));
+            next.ctx().executor().execute(
+                    () -> processPositionHandlers(next.ctx(), next.position(), next.times()));
         }
     }
 

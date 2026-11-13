@@ -355,6 +355,16 @@ public final class Keys {
             3000L);
 
     /**
+     * Fork: adaptive buffering. A position whose fix time is within this many milliseconds of the server time and is
+     * not older than the last position released for the device is released immediately. Only historical or out of
+     * order positions wait for the buffering threshold. Zero buffers every position (original behavior).
+     */
+    public static final ConfigKey<Long> SERVER_BUFFERING_LIVE_TOLERANCE = new LongConfigKey(
+            "server.buffering.liveTolerance",
+            List.of(KeyType.CONFIG),
+            10000L);
+
+    /**
      * Server wide connection timeout value in seconds. See protocol timeout for more information.
      */
     public static final ConfigKey<Integer> SERVER_TIMEOUT = new IntegerConfigKey(

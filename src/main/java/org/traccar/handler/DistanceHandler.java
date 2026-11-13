@@ -16,25 +16,44 @@
  */
 package org.traccar.handler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
 import org.traccar.helper.DistanceCalculator;
 import org.traccar.model.Position;
 import org.traccar.session.cache.CacheManager;
+import org.traccar.storage.Storage;
+import org.traccar.storage.StorageException;
+import org.traccar.storage.query.Columns;
+import org.traccar.storage.query.Condition;
+import org.traccar.storage.query.Order;
+import org.traccar.storage.query.Request;
+import org.traccar.timing.ProcessingTimings;
 
 import jakarta.inject.Inject;
 
 public class DistanceHandler extends BasePositionHandler {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(DistanceHandler.class);
+
     private final CacheManager cacheManager;
+    private final Storage storage;
+    private final ProcessingTimings timings;
 
     private final boolean filter;
     private final int minError;
     private final int maxError;
 
-    @Inject
     public DistanceHandler(Config config, CacheManager cacheManager) {
+        this(config, cacheManager, null, null);
+    }
+
+    @Inject
+    public DistanceHandler(Config config, CacheManager cacheManager, Storage storage, ProcessingTimings timings) {
         this.cacheManager = cacheManager;
+        this.storage = storage;
+        this.timings = timings;
         this.filter = config.getBoolean(Keys.COORDINATES_FILTER);
         this.minError = config.getInteger(Keys.COORDINATES_MIN_ERROR);
         this.maxError = config.getInteger(Keys.COORDINATES_MAX_ERROR);
@@ -49,6 +68,9 @@ public class DistanceHandler extends BasePositionHandler {
         }
         double totalDistance;
         Position last = cacheManager.getPosition(position.getDeviceId());
+        if (last != null && isOutOfOrder(position, last)) {
+            last = findPrevious(position, last);
+        }
         if (last != null) {
             totalDistance = last.getDouble(Position.KEY_TOTAL_DISTANCE);
             if (!position.hasAttribute(Position.KEY_DISTANCE)) {
@@ -71,6 +93,36 @@ public class DistanceHandler extends BasePositionHandler {
         position.set(Position.KEY_TOTAL_DISTANCE, totalDistance + distance);
 
         callback.processed(false);
+    }
+
+    private static boolean isOutOfOrder(Position position, Position last) {
+        return position.getFixTime() != null && last.getFixTime() != null
+                && position.getFixTime().before(last.getFixTime());
+    }
+
+    /**
+     * Fork: the cached position is the latest one, so a position that arrives out of order would measure the
+     * distance from a point after it. Use the stored position right before it by fix time instead (null if there
+     * is none). On a storage error keep the original behavior.
+     */
+    private Position findPrevious(Position position, Position latest) {
+        if (storage == null) {
+            return latest;
+        }
+        if (timings != null) {
+            timings.count(ProcessingTimings.COUNT_OUT_OF_ORDER);
+        }
+        try {
+            return storage.getObject(Position.class, new Request(
+                    new Columns.All(),
+                    new Condition.And(
+                            new Condition.Equals("deviceId", position.getDeviceId()),
+                            new Condition.Compare("fixTime", "<", position.getFixTime())),
+                    new Order("fixTime", true, 1)));
+        } catch (StorageException e) {
+            LOGGER.warn("Failed to load previous position", e);
+            return latest;
+        }
     }
 
 }

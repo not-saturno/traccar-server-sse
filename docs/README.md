@@ -7,6 +7,7 @@ Documentação das funcionalidades e alterações desta fork em relação ao
 |---|---|
 | [public-access.md](public-access.md) | Camada de acesso público: configuração, endpoints sem login, segurança |
 | [sse.md](sse.md) | Stream SSE autenticado (`/api/sse`), comparação com o WebSocket, teste de carga e recomendação |
+| [processamento.md](processamento.md) | Tempo de processamento das posições: buffer de reordenação, medição por handler (`/api/processing/timings`) |
 | [frontend.md](frontend.md) | Submódulo `traccar-web` (gps-tracker-front): rotas, sessão, execução local, build |
 | [suavizacao.md](suavizacao.md) | Suavização de localização: algoritmo de referência e o que foi implementado (animação da troca de ponto no front) |
 | [tk915.md](tk915.md) | Rastreador TKSTAR TK915 dos ônibus: comandos SMS (manual oficial, gist da comunidade e fornecedor), configuração para este servidor, comandos pelo servidor |
