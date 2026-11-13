@@ -56,7 +56,7 @@ public class SseResource extends BaseResource {
 
     /**
      * Administrators see every device, including ones created later by other users, not only the devices linked
-     * to them. Positions and device updates come from a global listener; events and logs still come from the
+     * to them. Positions, device updates and protocol logs come from a global listener; events still come from the
      * user listener (they are addressed per user), through an adapter that ignores everything else so nothing is
      * sent twice.
      */
@@ -85,7 +85,7 @@ public class SseResource extends BaseResource {
 
             @Override
             public void onUpdateLog(LogRecord record) {
-                listener.onUpdateLog(record);
+                // Logs come from the global listener (every device), so the user copy is dropped
             }
         };
         listener.setOnCleanup(() -> {

@@ -35,12 +35,17 @@ para administrador. O `/api/socket` nativo continua assim. No `/api/sse` desta f
 
 | Evento | Origem | Alcance |
 |---|---|---|
-| `positions`, `devices`, keepalive | listener global (`ConnectionManager.addGlobalListener`) | Todos os dispositivos, inclusive os criados depois da conexão |
+| `positions`, `devices`, `logs`, keepalive | listener global (`ConnectionManager.addGlobalListener`) | Todos os dispositivos, inclusive os criados depois da conexão |
 | `positions` ao conectar | `Condition.LatestPositions` sem filtro de usuário | Última posição de cada dispositivo |
-| `events`, `logs` | listener do usuário (`addListener(userId)`) | Como antes: só os do próprio administrador |
+| `events` | listener do usuário (`addListener(userId)`) | Como antes: só os do próprio administrador |
 
 Os eventos ficam no listener do usuário porque o `ConnectionManager` só os entrega por usuário. Como o listener do
-usuário ignora posições e status, não há posição duplicada para dispositivos vinculados ao administrador.
+usuário ignora posições, status e logs, nada chega duplicado para dispositivos vinculados ao administrador.
+
+Para os logs, o `ConnectionManager.updateLog` desta fork também entrega o registro aos listeners globais (o
+original só entregava aos usuários vinculados ao dispositivo). O stream público (`PublicSseListener`) ignora logs.
+Rastreador não cadastrado só gera log com `web.showUnknownDevices=true`, como no Traccar. A tela de logs do front
+usa esse evento ([frontend.md](frontend.md#logs-em-tempo-real-settingslogs)).
 Ao desconectar, os dois listeners são removidos.
 
 ## Comparação com o WebSocket nativo

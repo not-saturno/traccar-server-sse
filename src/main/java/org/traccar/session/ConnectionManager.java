@@ -380,6 +380,7 @@ public class ConnectionManager implements BroadcastInterface {
                         .flatMap(Set::stream)
                         .toList()
                         .forEach((listener) -> listener.onUpdateLog(record));
+                List.copyOf(globalListeners).forEach((listener) -> listener.onUpdateLog(record));
             }
         } else if (sessions.size() == 1) {
             var firstEntry = sessions.entrySet().iterator().next();
@@ -389,6 +390,9 @@ public class ConnectionManager implements BroadcastInterface {
                 for (UpdateListener listener : List.copyOf(listeners.getOrDefault(userId, Set.of()))) {
                     listener.onUpdateLog(record);
                 }
+            }
+            for (UpdateListener listener : List.copyOf(globalListeners)) {
+                listener.onUpdateLog(record);
             }
         }
     }

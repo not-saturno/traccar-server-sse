@@ -14,7 +14,7 @@ git merge --no-ff upstream/master
 | `README.md` | Manter a versão da fork |
 | `src/main/java/org/traccar/web/WebServer.java` | Manter o upstream. A configuração do Jersey fica em `ApiResourceConfig` |
 | `src/main/java/org/traccar/api/ApiResourceConfig.java` | Manter o upstream e registrar `SseFeature.class` |
-| `src/main/java/org/traccar/session/ConnectionManager.java` | Manter o upstream e reaplicar: log de assinatura SSE, `globalListeners` e iteração sobre `List.copyOf(...)` |
+| `src/main/java/org/traccar/session/ConnectionManager.java` | Manter o upstream e reaplicar: log de assinatura SSE, `globalListeners` (inclusive em `updateLog`, para os logs do administrador) e iteração sobre `List.copyOf(...)` |
 | `src/main/java/org/traccar/api/security/SecurityRequestFilter.java` | Manter o upstream e reaplicar o bloco `@PublicFeature` |
 | `src/main/java/org/traccar/config/Keys.java` | Manter as chaves `PUBLIC_*` |
 | `build.gradle` | Manter a dependência `jersey-media-sse` |

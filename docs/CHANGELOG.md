@@ -5,6 +5,11 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Front: tela **Logs** (`/settings/logs`) com as mensagens brutas dos rastreadores em tempo real (evento `logs` do
+  `/api/sse`): filtro por dispositivo, busca, pausar, limpar, copiar e **Cadastrar** para rastreador não
+  cadastrado (abre `/settings/new` com o identificador preenchido). Backend: `ConnectionManager.updateLog` entrega
+  logs também aos listeners globais, então o administrador vê os logs de todos os dispositivos (antes, só dos
+  vinculados a ele), sem duplicar. Ver [frontend.md](frontend.md#logs-em-tempo-real-settingslogs).
 - Administrador vê todos os dispositivos, os já criados e os futuros, inclusive os cadastrados por outros
   usuários. Antes via só os vinculados a ele. Front: `src/api/devices.ts` usa `?all=true` para administrador no
   mapa, em Dispositivos, nos Relatórios e na edição. Backend: o `/api/sse` do administrador usa o listener global

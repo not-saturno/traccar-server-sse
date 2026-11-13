@@ -29,6 +29,7 @@ git submodule update --init --remote traccar-web
 | `/register` | Só no primeiro acesso ou com cadastro aberto (ver abaixo) | Idem |
 | `/settings/**` (relatórios, novo, dispositivos, editar, conta) | Redireciona para `/login?redirect=...` | Sim |
 | `/settings/users` (usuários) | Redireciona para `/login` | **Só administrador**: cadastrar, excluir, vincular dispositivos a usuários comuns e redefinir senhas. Os demais voltam para `/settings/reports` |
+| `/settings/logs` (logs) | Redireciona para `/login` | Mensagens brutas dos rastreadores em tempo real (ver [abaixo](#logs-em-tempo-real-settingslogs)) |
 | `/settings/account` (conta) | Redireciona para `/login` | Nome, e-mail e troca da própria senha (pede a senha atual) |
 
 - Menu do mapa: o visitante vê **MAPA** e **ENTRAR**. O usuário logado vê também **RELATÓRIOS**, **CONFIGURAR**,
@@ -121,6 +122,27 @@ Só aparece o que o rastreador envia. Com o TK915 (protocolo `watch`) vêm bater
 velocidade, direção, altitude e GPS válido; o Traccar acrescenta os horários, a distância e o movimento. Os dados
 vêm do stream autenticado (`/api/sse`) e de `GET /api/devices`. **Usuário comum e visitante** continuam vendo só o
 resumo (nome e horário do último sinal), e o stream público não envia esses dados.
+
+### Logs em tempo real (`/settings/logs`)
+
+Tela **Logs** do menu de configurações (`traccar-web/src/pages/settings/logs.vue`). Mostra cada mensagem que um
+rastreador manda ao servidor, como chegou (texto do protocolo ou hexadecimal), útil para conferir se um aparelho
+novo está falando com o servidor e com qual identificador.
+
+- Fonte: evento `logs` do `/api/sse` (a tela abre a própria conexão e fecha ao sair). Não há endpoint REST: só
+  aparece o que chegar com a tela aberta, e nada fica salvo.
+- Alcance: usuário comum vê os logs dos dispositivos vinculados a ele; administrador, os de **todos** (ver
+  [sse.md](sse.md#administrador-todos-os-dispositivos)).
+- Cada registro: hora de chegada no navegador (com milissegundos), nome do dispositivo (ou o identificador),
+  identificador, protocolo, IP de origem e a mensagem, com botão de copiar.
+- Rastreador **não cadastrado** ganha o selo "NÃO CADASTRADO" e o botão **Cadastrar**, que abre `/settings/new`
+  com o identificador preenchido (`?uniqueId=`). Só aparece se o servidor tiver `web.showUnknownDevices=true`, e
+  o Traccar envia só a primeira mensagem dessa conexão.
+- Filtro por dispositivo (todos, não cadastrados ou um específico) e busca no conteúdo, identificador, IP ou nome.
+- **Pausar** congela a lista e acumula o que chegar (o botão mostra quantos); **Continuar** junta tudo. **Limpar**
+  apaga a lista. A tela guarda no máximo 1000 registros.
+- O indicador mostra "Ao vivo" ou "Reconectando". O `EventSource` reconecta sozinho, mas o que chegar no intervalo
+  se perde.
 
 ### Seguir um ônibus
 
