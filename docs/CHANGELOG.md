@@ -5,6 +5,11 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Front: tela **Logs** com visualização **Terminal** (estilo `tail -f`, cores por campo, acompanha o fim, clique
+  abre os detalhes) e **Detalhes** (cartões). Os detalhes de cada mensagem seguem o formato do popup do mapa: dados
+  da mensagem (tipo, formato, tamanho, IP, horário do servidor) e o `DeviceDetails` com a posição gerada por
+  aquela mensagem. Backend: `LogRecord` ganhou `time` (quando o servidor leu a mensagem), usado para ligar o log à
+  posição. Ver [frontend.md](frontend.md#logs-em-tempo-real-settingslogs).
 - Front: tela **Logs** (`/settings/logs`) com as mensagens brutas dos rastreadores em tempo real (evento `logs` do
   `/api/sse`): filtro por dispositivo, busca, pausar, limpar, copiar e **Cadastrar** para rastreador não
   cadastrado (abre `/settings/new` com o identificador preenchido). Backend: `ConnectionManager.updateLog` entrega

@@ -16,6 +16,7 @@ git merge --no-ff upstream/master
 | `src/main/java/org/traccar/api/ApiResourceConfig.java` | Manter o upstream e registrar `SseFeature.class` |
 | `src/main/java/org/traccar/session/ConnectionManager.java` | Manter o upstream e reaplicar: log de assinatura SSE, `globalListeners` (inclusive em `updateLog`, para os logs do administrador) e iteração sobre `List.copyOf(...)` |
 | `src/main/java/org/traccar/api/security/SecurityRequestFilter.java` | Manter o upstream e reaplicar o bloco `@PublicFeature` |
+| `src/main/java/org/traccar/model/LogRecord.java` | Manter o upstream e reaplicar o campo `time` (`getTime()`) |
 | `src/main/java/org/traccar/config/Keys.java` | Manter as chaves `PUBLIC_*` |
 | `build.gradle` | Manter a dependência `jersey-media-sse` |
 | `.gitmodules` | `traccar-web` aponta para `../gps-tracker-front.git`. Não aceitar a URL do upstream |

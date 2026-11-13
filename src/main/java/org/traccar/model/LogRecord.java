@@ -20,6 +20,7 @@ import org.traccar.session.ConnectionKey;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Date;
 
 public class LogRecord {
 
@@ -43,6 +44,14 @@ public class LogRecord {
 
     public String getHost() {
         return remoteAddress.getHostString();
+    }
+
+    // Fork: when the server read the message. Positions decoded from it get a serverTime right after this, which
+    // lets clients match each log record to the position it produced
+    private final Date time = new Date();
+
+    public Date getTime() {
+        return time;
     }
 
     private String protocol;

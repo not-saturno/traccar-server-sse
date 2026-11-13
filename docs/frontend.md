@@ -127,22 +127,41 @@ resumo (nome e horário do último sinal), e o stream público não envia esses 
 
 Tela **Logs** do menu de configurações (`traccar-web/src/pages/settings/logs.vue`). Mostra cada mensagem que um
 rastreador manda ao servidor, como chegou (texto do protocolo ou hexadecimal), útil para conferir se um aparelho
-novo está falando com o servidor e com qual identificador.
+novo está falando com o servidor, com qual identificador e o que o servidor entendeu da mensagem.
 
-- Fonte: evento `logs` do `/api/sse` (a tela abre a própria conexão e fecha ao sair). Não há endpoint REST: só
-  aparece o que chegar com a tela aberta, e nada fica salvo.
+- Fonte: eventos `logs`, `positions` e `devices` do `/api/sse` (a tela abre a própria conexão e fecha ao sair). Não
+  há endpoint REST: só aparece o que chegar com a tela aberta, e nada fica salvo.
 - Alcance: usuário comum vê os logs dos dispositivos vinculados a ele; administrador, os de **todos** (ver
   [sse.md](sse.md#administrador-todos-os-dispositivos)).
-- Cada registro: hora de chegada no navegador (com milissegundos), nome do dispositivo (ou o identificador),
-  identificador, protocolo, IP de origem e a mensagem, com botão de copiar.
-- Rastreador **não cadastrado** ganha o selo "NÃO CADASTRADO" e o botão **Cadastrar**, que abre `/settings/new`
-  com o identificador preenchido (`?uniqueId=`). Só aparece se o servidor tiver `web.showUnknownDevices=true`, e
-  o Traccar envia só a primeira mensagem dessa conexão.
+- Duas visualizações (botões **Terminal** e **Detalhes**; a escolha fica salva no navegador, `localStorage`
+  `logs.view`):
+  - **Terminal** (padrão): estilo `tail -f`, uma linha por mensagem, mais antiga em cima:
+    `HH:MM:SS.mmm [protocolo] IP dispositivo > mensagem`, com `└ posição lat, lon` embaixo quando a mensagem gerou
+    posição. Dispositivo cadastrado em verde e não cadastrado em laranja. Acompanha o fim sozinho; se você rolar
+    para cima, ele para e aparece o botão "N NOVAS" para voltar. Clicar numa linha abre os detalhes num diálogo.
+  - **Detalhes**: um cartão por mensagem, mais recente primeiro, já com os detalhes abertos (50 por vez, com
+    "Mostrar mais").
+- Detalhes (`traccar-web/src/components/LogDetails.vue`), no mesmo formato do popup do administrador no mapa:
+  - **Mensagem**: a mensagem bruta (com copiar), hora em que o servidor a leu (com milissegundos), protocolo, tipo
+    (no `watch`: `LK` heartbeat, `UD` posição, `AL` alarme etc.), IP de origem, identificador, formato (texto ou
+    hexadecimal) e tamanho em bytes;
+  - abaixo, o **`DeviceDetails`** do dispositivo (Posição, Aparelho, Horários, Identificação, Outros dados) com a
+    **posição gerada por aquela mensagem**, não a última do dispositivo. Mensagem que não gerou posição mostra o
+    aviso. Aqui os detalhes aparecem para qualquer usuário logado, porque ele só recebe logs dos próprios
+    dispositivos.
+- Associação mensagem → posição: o servidor processa a posição depois do log, às vezes segundos e outras
+  mensagens depois, então a ordem de chegada não serve. O `LogRecord` desta fork traz `time` (quando o servidor
+  leu a mensagem), e a posição decodificada dela recebe `serverTime` logo em seguida, na mesma leitura. A tela liga
+  cada posição à última mensagem do dispositivo com `time <= serverTime` (até 2 s antes). Mensagem com várias
+  posições fica com a primeira.
+- Rastreador **não cadastrado** aparece com o selo "NÃO CADASTRADO" (laranja no terminal) e o botão
+  **Cadastrar**, que abre `/settings/new` com o identificador preenchido (`?uniqueId=`). Só aparece se o servidor
+  tiver `web.showUnknownDevices=true`, e o Traccar envia só a primeira mensagem dessa conexão.
 - Filtro por dispositivo (todos, não cadastrados ou um específico) e busca no conteúdo, identificador, IP ou nome.
 - **Pausar** congela a lista e acumula o que chegar (o botão mostra quantos); **Continuar** junta tudo. **Limpar**
   apaga a lista. A tela guarda no máximo 1000 registros.
-- O indicador mostra "Ao vivo" ou "Reconectando". O `EventSource` reconecta sozinho, mas o que chegar no intervalo
-  se perde.
+- O indicador mostra "Ao vivo", "Reconectando" ou "Pausado". O `EventSource` reconecta sozinho, mas o que chegar
+  no intervalo se perde.
 
 ### Seguir um ônibus
 

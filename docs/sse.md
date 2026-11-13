@@ -22,7 +22,7 @@ um cliente SSE que suporte headers.
 | `positions` | `Position` completo do Traccar | Ao conectar (última posição de cada dispositivo) e a cada nova posição |
 | `devices` | `Device` completo | Mudança de status ou dados do dispositivo |
 | `events` | `Event` (alarme, ignição, geocerca...) | Eventos do usuário |
-| `logs` | `LogRecord` | Logs brutos de protocolo (ver observação) |
+| `logs` | `LogRecord` (com `time`, ver abaixo) | Logs brutos de protocolo (ver observação) |
 | `: keepalive` | comentário | Periodicamente, para manter a conexão |
 
 > Diferente do WebSocket, que só envia `logs` quando o cliente pede (`{"logs": true}`), o SSE autenticado envia
@@ -46,6 +46,10 @@ Para os logs, o `ConnectionManager.updateLog` desta fork também entrega o regis
 original só entregava aos usuários vinculados ao dispositivo). O stream público (`PublicSseListener`) ignora logs.
 Rastreador não cadastrado só gera log com `web.showUnknownDevices=true`, como no Traccar. A tela de logs do front
 usa esse evento ([frontend.md](frontend.md#logs-em-tempo-real-settingslogs)).
+
+O `LogRecord` desta fork tem o campo `time` (quando o servidor leu a mensagem). A posição decodificada da mensagem
+recebe `serverTime` logo depois, na mesma leitura, então o cliente consegue ligar cada log à posição que ele gerou
+(última mensagem do dispositivo com `time <= serverTime`). O campo também aparece nos `logs` do `/api/socket`.
 Ao desconectar, os dois listeners são removidos.
 
 ## Comparação com o WebSocket nativo
