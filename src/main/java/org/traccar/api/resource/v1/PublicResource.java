@@ -1,4 +1,4 @@
-package org.traccar.api.resource;
+package org.traccar.api.resource.v1;
 
 import org.traccar.api.security.PublicFeature;
 import org.traccar.helper.WebHelper;
@@ -28,7 +28,7 @@ import java.util.List;
  * Read-only endpoints available without login. Each method is gated by {@link PublicFeature} and only exposes
  * devices marked as public.
  */
-@Path("public")
+@Path("v1/public")
 @Produces(MediaType.APPLICATION_JSON)
 public class PublicResource {
 

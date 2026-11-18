@@ -1,4 +1,4 @@
-package org.traccar.api.resource;
+package org.traccar.api.resource.v1;
 
 import org.traccar.api.BaseResource;
 import org.traccar.storage.StorageException;
@@ -17,7 +17,7 @@ import jakarta.ws.rs.core.Response;
  * Fork: time spent in each position processing step since the server started (or the last reset). Administrators
  * only.
  */
-@Path("processing")
+@Path("v1/processing")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ProcessingResource extends BaseResource {

@@ -1,4 +1,4 @@
-package org.traccar.api.resource;
+package org.traccar.api.resource.v1;
 
 import org.traccar.api.BaseResource;
 import org.traccar.helper.model.PositionUtil;
@@ -23,7 +23,7 @@ import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 import java.util.List;
 
-@Path("/sse")
+@Path("v1/sse")
 public class SseResource extends BaseResource {
 
     @Inject
