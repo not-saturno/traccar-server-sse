@@ -8,7 +8,7 @@ para quem já tem um nginx no servidor.
 ```
 navegador / app ──HTTPS:443──▶ Caddy/nginx ──HTTP──▶ Traccar :8082 ─┬─ /            front (web/)
                                        │                      ├─ /api/*       REST
-                                       │                      ├─ /api/sse, /api/public/stream  SSE
+                                       │                      ├─ /api/v1/sse, /api/v1/public/stream  SSE
                                        │                      ├─ /api/socket  WebSocket
                                        │                      └─ POST /       OsmAnd via HTTPS
 rastreador OsmAnd ──:5055 (opcional, ver osmand-security.md)──▶ Traccar :5055
@@ -123,7 +123,7 @@ Dá para trocar de nginx para Caddy sem perder o banco, mas não rode os dois ao
 pacote ou da imagem, e o nginx só repassa tudo. Front e API ficam no mesmo domínio, então:
 
 - o cookie de sessão (`JSESSIONID`) funciona sem CORS nem `SameSite=None`;
-- o `EventSource` do mapa envia o cookie para `/api/sse`;
+- o `EventSource` do mapa envia o cookie para `/api/v1/sse`;
 - o Traccar já faz o fallback de SPA (rotas do vue-router devolvem `index.html`);
 - o `VITE_API_URL` fica no padrão `/api`, sem rebuild por ambiente.
 
@@ -152,7 +152,7 @@ chegar ao Traccar. Os rastreadores precisam usar a porta 5055.
 
 **Domínio separado para o front** (ex.: front na Vercel, API em outro domínio): não recomendado. Exige
 `VITE_API_URL` absoluto no build, `web.origin` com o domínio do front e `web.sameSiteCookie=None`. Mesmo assim,
-navegadores que bloqueiam cookies de terceiros (Safari, Firefox estrito) quebram o login e o `/api/sse`.
+navegadores que bloqueiam cookies de terceiros (Safari, Firefox estrito) quebram o login e o `/api/v1/sse`.
 
 ## Configuração do Traccar
 
@@ -304,12 +304,12 @@ D=https://onibus.exemplo.ufpa.br
 curl -sI $D/ | head -1                           # 200, front
 curl -sI --http2 $D/ | head -1                   # HTTP/2 200
 curl -sI http://onibus.exemplo.ufpa.br/ | head -1 # 301 para https
-curl -N $D/api/public/stream                     # eventos de ônibus públicos chegando um a um
-curl -N -u email:senha $D/api/sse                # stream autenticado
+curl -N $D/api/v1/public/stream                     # eventos de ônibus públicos chegando um a um
+curl -N -u email:senha $D/api/v1/sse                # stream autenticado
 curl -X POST "$D/?id=<uniqueId>&lat=-1.47&lon=-48.45"  # OsmAnd via HTTPS, deve responder 200
 ```
 
-No navegador, a aba Network deve mostrar `/api/public/stream` (ou `/api/sse`) com tipo `eventsource`, protocolo
+No navegador, a aba Network deve mostrar `/api/v1/public/stream` (ou `/api/v1/sse`) com tipo `eventsource`, protocolo
 `h2` e eventos chegando na aba **EventStream** sem atraso.
 
 ### Testado (2026-10-30)
@@ -320,7 +320,7 @@ Caddy local (`traccar-sse-caddy.yaml` com a imagem `docker/Dockerfile.sse` e `ca
 |---|---|
 | Front em `/` e rota do SPA | 200, `text/html`, HTTP/2 |
 | Porta 80 | 308 para HTTPS |
-| Primeiro usuário, dispositivo público, OsmAnd via HTTPS | 200, posição chegou em `/api/public/stream` e `/api/sse` |
+| Primeiro usuário, dispositivo público, OsmAnd via HTTPS | 200, posição chegou em `/api/v1/public/stream` e `/api/v1/sse` |
 | Atraso do evento SSE | 3,09 s, o mesmo de quando o cliente conecta direto no Traccar (o atraso vem do servidor, não do proxy) |
 | Conexão SSE aberta por 130 s | Continuou aberta, com 2 keepalives |
 | `/api/socket` com cookie de sessão | 101 Switching Protocols |
@@ -337,7 +337,7 @@ nginx, cenário C local (imagem `docker/Dockerfile.sse` + `nginx:stable-alpine` 
 | Porta 80 | 301 para HTTPS |
 | Primeiro usuário + dispositivo público pela API via nginx | 200 |
 | OsmAnd via HTTPS (`POST /`) | 200, posição chegou nos dois streams |
-| `/api/public/stream` e `/api/sse` com `Accept-Encoding: gzip` | Eventos chegam no mesmo instante que direto no Traccar (o nginx não adiciona atraso) |
+| `/api/v1/public/stream` e `/api/v1/sse` com `Accept-Encoding: gzip` | Eventos chegam no mesmo instante que direto no Traccar (o nginx não adiciona atraso) |
 | Conexão SSE aberta por 130 s | Continuou aberta, com 2 keepalives |
 | `/api/socket` com cookie de sessão | 101 Switching Protocols |
 | Cookie de sessão | `HttpOnly; Secure` |
@@ -397,7 +397,7 @@ sudo systemctl start traccar
 | `502 Bad Gateway` | Traccar fora do ar ou `TRACCAR_UPSTREAM` errado | `docker compose logs traccar` / `journalctl -u traccar`. No host, o upstream é `127.0.0.1:8082` |
 | nginx não sobe: `cannot load certificate` | Certificado ainda não emitido | Emita antes (seção [Certificado TLS](#certificado-tls)) |
 | Variáveis `$host` vazias na config gerada | `envsubst` sem a lista de variáveis | Rode com `'${SERVER_NAME} ${TRACCAR_UPSTREAM}'` |
-| Login funciona mas o mapa logado não recebe posições | Front em outro domínio, cookie não vai para `/api/sse` | Sirva front e API no mesmo domínio |
+| Login funciona mas o mapa logado não recebe posições | Front em outro domínio, cookie não vai para `/api/v1/sse` | Sirva front e API no mesmo domínio |
 | Caddy não emite o certificado (`challenge failed`, `no such host`) | DNS ainda não aponta para o servidor, ou portas 80/443 fechadas no firewall | Confira `dig +short <SERVER_NAME>` e o firewall. O Caddy tenta de novo sozinho |
 | Caddy: `too many certificates already issued` | Limite do Let's Encrypt, geralmente por apagar o volume `caddy-data` | Aguarde a janela de 7 dias. Use o staging nos testes |
 | Mais de 6 abas e o mapa trava | HTTP/1.1 | Confirme `http2` no `listen 443` |

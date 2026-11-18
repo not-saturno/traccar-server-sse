@@ -60,9 +60,9 @@ server {
     proxy_set_header CF-Connecting-IP "";
     proxy_set_header Connection "";
 
-    # SSE: /api/sse (logged in) and /api/public/stream (visitors).
+    # SSE: /api/v1/sse (logged in) and /api/v1/public/stream (visitors).
     # Traccar sends a keepalive every 55 s, so the read timeout must be longer than that.
-    location ~ ^/api/(sse|public/stream)$ {
+    location ~ ^/api/v1/(sse|public/stream)$ {
         proxy_pass http://traccar;
         proxy_buffering off;
         proxy_cache off;

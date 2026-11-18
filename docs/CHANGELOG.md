@@ -5,6 +5,21 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Relatórios de emissão, consumo e custo calculados no servidor (BFF): `GET /api/v1/reports/emissions/fleet`,
+  `/monthly` e `/instant`. O front deixou de baixar todas as posições do ano de cada dispositivo e de calcular no
+  navegador; recebe as linhas prontas (mês ou hora), o resumo dos cards, o trajeto afinado (até 2000 pontos) e o
+  memorial de cálculo. Distância por hora a partir de `totalDistance`, com trava de salto (150 km/h) em todos os
+  relatórios. Ver [emissoes.md](emissoes.md).
+- Histórico dos parâmetros do cálculo (fatores de emissão do diesel e da rede, preço do diesel, tarifa de energia,
+  rendimento e consumo) por ano, mês ou dia, opcionalmente por categoria, com fonte: tabela `tc_emission_factors`
+  (`schema/changelog-sse-1.0.0.xml`) e `GET`/`POST`/`PUT`/`DELETE /api/v1/emission-factors` (alteração só
+  administrador, registrada na auditoria). Cada dia do relatório usa o valor mais específico que o cobre; sem
+  nenhum, o último anterior; antes de tudo, o padrão do memorial UFPA (os antigos valores fixos do front). Ver
+  [emissoes.md](emissoes.md).
+- Configuração `emissions.combustionCategories`, `emissions.maxHourlyDistance`, `emissions.instantMaxDays`,
+  `emissions.monthlyMaxMonths` e `emissions.routeMaxPoints`.
+- Front: tela **Fatores** (`/settings/emission-factors`, administrador) para manter o histórico, e card
+  **Memorial de Cálculo** nos Relatórios. Ver [frontend.md](frontend.md#relatórios-settingsreports).
 - Buffer de reordenação adaptativo: posições ao vivo (horário do GPS a até `server.buffering.liveTolerance`, padrão
   10 s, do servidor, e em ordem) são liberadas na hora; só históricas ou fora de ordem esperam
   `server.buffering.threshold` (3 s). A posição ao vivo deixou de chegar ~3 s depois da mensagem. `0` volta ao
@@ -92,6 +107,13 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
   `docker/compose/traccar-sse-caddy.yaml`. Passa a ser o caminho recomendado em [deploy.md](deploy.md).
 
 ### Alterado
+- **Rotas da fork movidas para `/api/v1`**, separadas da API original do Traccar: `/api/sse` → `/api/v1/sse`,
+  `/api/public/*` → `/api/v1/public/*`, `/api/processing/timings` → `/api/v1/processing/timings`. As rotas antigas
+  respondem 404 (sem alias). Recursos no pacote `org.traccar.api.resource.v1`; front e bloco SSE do nginx
+  atualizados. Nenhum endpoint do upstream teve rota ou contrato alterado. Ver [api-v1.md](api-v1.md).
+- Relatórios: `gasShip` passa a ser tratado como combustão (antes só `gasBus`; `gasShip` saía como elétrico).
+- Front, Relatórios: análise de instante abre com as últimas 24 h (antes início = fim = agora, sem dados), faz uma
+  só busca por mudança (antes duas) e mostra o erro do servidor; a chamada não usada a `/api/reports/route` saiu.
 - Submódulo `traccar-web` agora aponta para `gps-tracker-front` (branch `main`). Ver [frontend.md](frontend.md).
 - Front: login automático com credenciais embutidas removido. Route guard exige login em `/settings/**`. O mapa
   usa os endpoints públicos para visitantes. API configurável via `VITE_API_URL`, com proxy de dev.

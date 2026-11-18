@@ -24,11 +24,12 @@ git submodule update --init --remote traccar-web
 
 | Rota | Sem login | Logado |
 |---|---|---|
-| `/` (mapa + lista de ônibus) | Só dispositivos públicos, via `/api/public/*` | Dispositivos da conta, via `/api/devices` + `/api/sse`. Administrador: todos (ver abaixo) |
+| `/` (mapa + lista de ônibus) | Só dispositivos públicos, via `/api/v1/public/*` | Dispositivos da conta, via `/api/devices` + `/api/v1/sse`. Administrador: todos (ver abaixo) |
 | `/login` | Sim (vai para `/register` se o servidor não tem usuários) | Redireciona para `/` |
 | `/register` | Só no primeiro acesso ou com cadastro aberto (ver abaixo) | Idem |
 | `/settings/**` (relatórios, novo, dispositivos, editar, conta) | Redireciona para `/login?redirect=...` | Sim |
 | `/settings/users` (usuários) | Redireciona para `/login` | **Só administrador**: cadastrar, excluir, vincular dispositivos a usuários comuns e redefinir senhas. Os demais voltam para `/settings/reports` |
+| `/settings/emission-factors` (fatores) | Redireciona para `/login` | **Só administrador**: histórico dos parâmetros do cálculo de emissões e custos (ver [emissoes.md](emissoes.md)) |
 | `/settings/logs` (logs) | Redireciona para `/login` | Mensagens brutas dos rastreadores em tempo real (ver [abaixo](#logs-em-tempo-real-settingslogs)) |
 | `/settings/account` (conta) | Redireciona para `/login` | Nome, e-mail e troca da própria senha (pede a senha atual) |
 
@@ -51,7 +52,7 @@ Agora:
 - o front usa `src/api/devices.ts`: para administrador, `GET /devices?all=true` no mapa, em Dispositivos, nos
   Relatórios e na edição (`/settings/<uniqueId>`, que procura na lista completa, porque a busca por `uniqueId` da
   API ignora o `all`);
-- o `/api/sse` do administrador recebe posições e status de todos os dispositivos, inclusive dos criados depois
+- o `/api/v1/sse` do administrador recebe posições e status de todos os dispositivos, inclusive dos criados depois
   que ele abriu o mapa (ver [sse.md](sse.md#administrador-todos-os-dispositivos)).
 
 Usuário comum continua vendo só os dispositivos vinculados. Para dar acesso a um ônibus, vincule em **Usuários**.
@@ -79,7 +80,7 @@ Ponto de quebra: `md` (768px).
 | Tela | Celular | Desktop |
 |---|---|---|
 | Mapa (`/`) | Mapa em tela cheia. A lista abre como bottom sheet (60% da altura) pelo botão **Ônibus (n)** ou pelo menu, e fecha no X ou ao tocar no mapa. Entrar, configurações e sair ficam na barra superior | Painel lateral com a lista e atalhos |
-| `/settings/*` | Barra superior (voltar ao mapa + seção atual) e abas fixas embaixo: Relatórios, Novo, Dispositivos, Conta | Menu lateral (`w-64`) |
+| `/settings/*` | Barra superior (voltar ao mapa + seção atual) e abas fixas embaixo: Relatórios, Novo, Dispositivos, Logs, Conta (administrador: também Usuários e Fatores) | Menu lateral (`w-64`) |
 | Dispositivos | Cards com editar/excluir | Tabela paginada |
 | Formulários | Uma coluna, botões em largura total e empilhados | Duas colunas onde couber |
 
@@ -123,7 +124,7 @@ termina de centralizar.
 
 Só aparece o que o rastreador envia. Com o TK915 (protocolo `watch`) vêm bateria, sinal GSM, satélites,
 velocidade, direção, altitude e GPS válido; o Traccar acrescenta os horários, a distância e o movimento. Os dados
-vêm do stream autenticado (`/api/sse`) e de `GET /api/devices`. **Usuário comum e visitante** continuam vendo só o
+vêm do stream autenticado (`/api/v1/sse`) e de `GET /api/devices`. **Usuário comum e visitante** continuam vendo só o
 resumo (nome e horário do último sinal), e o stream público não envia esses dados.
 
 ### Logs em tempo real (`/settings/logs`)
@@ -132,7 +133,7 @@ Tela **Logs** do menu de configurações (`traccar-web/src/pages/settings/logs.v
 rastreador manda ao servidor, como chegou (texto do protocolo ou hexadecimal), útil para conferir se um aparelho
 novo está falando com o servidor, com qual identificador e o que o servidor entendeu da mensagem.
 
-- Fonte: eventos `logs`, `positions` e `devices` do `/api/sse` (a tela abre a própria conexão e fecha ao sair). Não
+- Fonte: eventos `logs`, `positions` e `devices` do `/api/v1/sse` (a tela abre a própria conexão e fecha ao sair). Não
   há endpoint REST: só aparece o que chegar com a tela aberta, e nada fica salvo.
 - Alcance: usuário comum vê os logs dos dispositivos vinculados a ele; administrador, os de **todos** (ver
   [sse.md](sse.md#administrador-todos-os-dispositivos)).
@@ -147,7 +148,7 @@ novo está falando com o servidor, com qual identificador e o que o servidor ent
   (mensagem que não gera posição, posição filtrada, posição mais antiga que a última do aparelho, que é gravada mas
   não vai ao mapa, ou mensagem anterior à tela). O diálogo de detalhes mostra o mesmo tempo em "Posição chegou".
 - **Desempenho** (botão, só administrador): painel com o tempo de cada etapa do processamento de posições no
-  servidor (`GET /api/processing/timings`, ver [processamento.md](processamento.md)), atualizado a cada 5 s, com
+  servidor (`GET /api/v1/processing/timings`, ver [processamento.md](processamento.md)), atualizado a cada 5 s, com
   média recente, p95, máximo, número de execuções, uma barra por etapa e **Zerar**. Mostra a etapa mais lenta e,
   quando é o buffer de reordenação, explica a opção `server.buffering.threshold`. Componente
   `traccar-web/src/components/ProcessingTimings.vue`.
@@ -203,9 +204,38 @@ some, mas posições fora de ordem deixam de ser corrigidas.
 ### Categorias de dispositivo
 
 Definidas em `src/data/categories.ts` e usadas pelo cadastro, pela edição e pelos relatórios:
-`electricBus` (padrão) e `gasBus`. Os relatórios usam fatores de diesel para `gasBus` e tratam qualquer outra
-categoria como elétrica. Um valor antigo (ex.: `bus`, `ship`) aparece na edição como "Outra (valor)", em vez de
+`electricBus` (padrão), `gasBus`, `electricShip` e `gasShip`. Quem decide se a categoria é a combustão ou elétrica
+nos relatórios é o servidor (`emissions.combustionCategories`, padrão `gasBus,gasShip`; ver
+[emissoes.md](emissoes.md)). Um valor antigo (ex.: `bus`, `ship`) aparece na edição como "Outra (valor)", em vez de
 campo vazio.
+
+### Relatórios (`/settings/reports`)
+
+A tela não baixa posições nem calcula nada: chama o BFF `/api/v1/reports/emissions/*` (cliente em
+`src/api/emissions.ts`) e só desenha. Antes, o comparativo anual baixava **todas as posições do ano de cada
+dispositivo** (`GET /api/positions`), e a visão individual baixava posições, rota e resumo, para calcular no
+navegador com constantes fixas no código.
+
+| Parte da tela | Endpoint |
+|---|---|
+| Comparativo de frota (anual) | `GET /api/v1/reports/emissions/fleet` |
+| Cards, análise histórica mensal e **Memorial de Cálculo** | `GET /api/v1/reports/emissions/monthly` |
+| Análise de instante (barras por hora) e trajeto no mapa | `GET /api/v1/reports/emissions/instant` |
+
+- O fuso do navegador vai no parâmetro `timezone`, então meses e horas batem com o que o usuário vê.
+- **Memorial de Cálculo** (novo): tabela com o valor de cada parâmetro no período, a vigência e a origem (valor do
+  histórico com a fonte, ou padrão do memorial UFPA).
+- Análise de instante: o intervalo padrão passou a ser as últimas 24 h (antes, início = fim = agora, sem dados) e
+  a tela faz uma busca por mudança (antes, dois `watch` disparavam a mesma busca duas vezes). Erro do servidor
+  (intervalo maior que `emissions.instantMaxDays`, fim antes do início) aparece em um aviso.
+- Exportação CSV/Excel: colunas `periodo, km, consumo, custo, emissao, custoDiesel, custoEletrico, emissaoDiesel,
+  emissaoEletrica` (emissões em tCO2e).
+
+### Fatores de emissão (`/settings/emission-factors`)
+
+Tela do administrador para o histórico dos parâmetros (ver [emissoes.md](emissoes.md)): cadastrar um valor por
+ano, mês ou dia, opcionalmente só para uma categoria, com a fonte; editar e excluir. Mostra também os valores
+padrão, usados antes do primeiro valor cadastrado.
 
 ### Removido: login automático com credenciais embutidas
 

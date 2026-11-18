@@ -46,7 +46,7 @@ bloquear a 5055 no firewall não basta.
 | Descoberta do `uniqueId` | Vazamento por tráfego HTTP, por logs, por quem configurou o rastreador ou por IDs previsíveis (IMEI, `bus01`) |
 
 O que **já reduz** o risco nesta fork:
-- Os endpoints públicos (`/api/public/*`) não expõem `uniqueId` (ver [public-access.md](public-access.md)).
+- Os endpoints públicos (`/api/v1/public/*`) não expõem `uniqueId` (ver [public-access.md](public-access.md)).
 - `uniqueId` só aparece para usuários logados (`/api/devices`, telas de configuração).
 
 ## Mitigações disponíveis hoje (sem mudar código)

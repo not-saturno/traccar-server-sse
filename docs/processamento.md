@@ -75,13 +75,13 @@ atualiza a última posição nem vai aos streams. Isso já era assim no Traccar.
 
 Endpoint desta fork, só administrador:
 
-- `GET /api/processing/timings`: `since` (início da medição), `window` (amostras por etapa usadas na média recente
+- `GET /api/v1/processing/timings`: `since` (início da medição), `window` (amostras por etapa usadas na média recente
   e no p95, 500), `bufferingThresholdMs` e `liveToleranceMs` (configuração do buffer), `counters` (`live`:
   liberadas na hora; `buffered`: retidas; `outOfOrder`: distância medida da anterior por horário) e `steps`, na
   ordem do pipeline.
   Cada etapa tem `name`, `kind` (`STAGE`, `POSITION_HANDLER`, `EVENT_HANDLER`), `count`, `averageMs`,
   `recentAverageMs`, `p95Ms`, `maxMs` e `lastMs`.
-- `DELETE /api/processing/timings`: zera a medição.
+- `DELETE /api/v1/processing/timings`: zera a medição.
 
 Etapas (`STAGE`): `buffer`, `queue`, `postProcess` e `total` (da chegada no `ProcessingHandler` até a posição sair).
 Os handlers aparecem pelo nome da classe; handlers desligados na configuração não aparecem.
@@ -90,7 +90,7 @@ Os dados ficam só em memória e recomeçam quando o servidor reinicia. O custo 
 A tela **Logs** mostra esse painel para o administrador (botão **Desempenho**).
 
 ```bash
-curl -s -u admin@exemplo:senha https://SERVIDOR/api/processing/timings | jq '.steps[] | {name, recentAverageMs, p95Ms}'
+curl -s -u admin@exemplo:senha https://SERVIDOR/api/v1/processing/timings | jq '.steps[] | {name, recentAverageMs, p95Ms}'
 ```
 
 ## Implementação
@@ -99,7 +99,7 @@ curl -s -u admin@exemplo:senha https://SERVIDOR/api/processing/timings | jq '.st
 |---|---|
 | `src/main/java/org/traccar/timing/ProcessingTimings.java` | Coletor em memória (`@Singleton`): contagem, média, máximo e janela das últimas 500 amostras por etapa |
 | `src/main/java/org/traccar/ProcessingHandler.java` | Mede o buffer, a fila, cada handler (da chamada até o callback, porque alguns são assíncronos), o pós-processamento e o total |
-| `src/main/java/org/traccar/api/resource/ProcessingResource.java` | `GET`/`DELETE /api/processing/timings` |
+| `src/main/java/org/traccar/api/resource/v1/ProcessingResource.java` | `GET`/`DELETE /api/v1/processing/timings` |
 | `src/main/java/org/traccar/database/BufferingManager.java` | Buffer adaptativo (`isLive`, `lastReleased`) e contadores |
 | `src/main/java/org/traccar/handler/DistanceHandler.java` | Distância de posição fora de ordem a partir da anterior por horário |
 | `src/main/java/org/traccar/config/Keys.java` | `server.buffering.liveTolerance` |

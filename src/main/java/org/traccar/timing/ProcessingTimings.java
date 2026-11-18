@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Fork: how long each step of position processing takes (ProcessingHandler), kept in memory only. Used to find
  * which handler delays the position after the protocol log goes out. Exposed to administrators by
- * {@code GET /api/processing/timings}.
+ * {@code GET /api/v1/processing/timings}.
  */
 @Singleton
 public class ProcessingTimings {

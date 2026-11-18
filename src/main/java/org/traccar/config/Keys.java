@@ -2341,6 +2341,50 @@ public final class Keys {
             50);
 
     /**
+     * Fork: comma-separated device categories powered by combustion in the emission reports. Any other category is
+     * treated as electric.
+     */
+    public static final ConfigKey<String> EMISSIONS_COMBUSTION_CATEGORIES = new StringConfigKey(
+            "emissions.combustionCategories",
+            List.of(KeyType.CONFIG),
+            "gasBus,gasShip");
+
+    /**
+     * Fork: distance in kilometers above which one hour of an emission report is discarded as a GPS or odometer
+     * glitch (counted as zero).
+     */
+    public static final ConfigKey<Double> EMISSIONS_MAX_HOURLY_DISTANCE = new DoubleConfigKey(
+            "emissions.maxHourlyDistance",
+            List.of(KeyType.CONFIG),
+            150.0);
+
+    /**
+     * Fork: longest interval, in days, accepted by the hourly emission report ({@code /api/v1/reports/emissions/
+     * instant}).
+     */
+    public static final ConfigKey<Integer> EMISSIONS_INSTANT_MAX_DAYS = new IntegerConfigKey(
+            "emissions.instantMaxDays",
+            List.of(KeyType.CONFIG),
+            31);
+
+    /**
+     * Fork: longest interval, in months, accepted by the monthly emission reports.
+     */
+    public static final ConfigKey<Integer> EMISSIONS_MONTHLY_MAX_MONTHS = new IntegerConfigKey(
+            "emissions.monthlyMaxMonths",
+            List.of(KeyType.CONFIG),
+            60);
+
+    /**
+     * Fork: maximum number of points of the route returned by the hourly emission report. Longer routes are
+     * thinned out evenly, keeping the first and last point.
+     */
+    public static final ConfigKey<Integer> EMISSIONS_ROUTE_MAX_POINTS = new IntegerConfigKey(
+            "emissions.routeMaxPoints",
+            List.of(KeyType.CONFIG),
+            2000);
+
+    /**
      * Output logging to the standard terminal output instead of a log file.
      */
     public static final ConfigKey<Boolean> LOGGER_CONSOLE = new BooleanConfigKey(

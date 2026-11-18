@@ -1,4 +1,4 @@
-# SSE autenticado (`/api/sse`)
+# SSE autenticado (`/api/v1/sse`)
 
 Stream Server-Sent Events com as atualizações em tempo real dos dispositivos **do usuário logado** (para o
 administrador, de **todos** os dispositivos; ver [abaixo](#administrador-todos-os-dispositivos)). É o
@@ -8,7 +8,7 @@ equivalente SSE do WebSocket nativo `/api/socket`. Para visitantes sem login, ve
 ## Uso
 
 ```js
-const source = new EventSource('/api/sse', { withCredentials: true }) // precisa do cookie de sessão
+const source = new EventSource('/api/v1/sse', { withCredentials: true }) // precisa do cookie de sessão
 source.addEventListener('positions', (e) => console.log(JSON.parse(e.data)))
 ```
 
@@ -31,7 +31,7 @@ um cliente SSE que suporte headers.
 ### Administrador: todos os dispositivos
 
 No Traccar, o listener de cada usuário só recebe os dispositivos vinculados a ele (`tc_user_device`), inclusive
-para administrador. O `/api/socket` nativo continua assim. No `/api/sse` desta fork, o administrador recebe:
+para administrador. O `/api/socket` nativo continua assim. No `/api/v1/sse` desta fork, o administrador recebe:
 
 | Evento | Origem | Alcance |
 |---|---|---|
@@ -54,7 +54,7 @@ Ao desconectar, os dois listeners são removidos.
 
 ## Comparação com o WebSocket nativo
 
-| | WebSocket `/api/socket` | SSE `/api/sse` |
+| | WebSocket `/api/socket` | SSE `/api/v1/sse` |
 |---|---|---|
 | Envelope | `{"positions":[...]}`, com o tipo na chave e sempre array | `event: positions` + `data: {...}`, objeto único |
 | Snapshot inicial | um envio com todas as posições | um evento por posição |
@@ -76,7 +76,7 @@ evitando que o cliente consulte o servidor de tempos em tempos (polling).
 | `events` | `GET /api/reports/events` |
 | `logs` | **Nenhum**: logs brutos de protocolo só existem nos streams |
 
-O mesmo vale para o stream público: `/api/public/stream` = `/api/public/devices` + `/api/public/positions`, só
+O mesmo vale para o stream público: `/api/v1/public/stream` = `/api/v1/public/devices` + `/api/v1/public/positions`, só
 que por push. O polling seria pior, porque cada visitante consultaria o banco a cada X segundos, enquanto o
 push só envia algo quando um ônibus manda posição.
 
@@ -90,8 +90,8 @@ Feito na máquina de desenvolvimento (WSL2, JDK 21, H2) com o servidor desta for
 | Cenário | Conexões abertas | Threads do Jetty (`qtp`) | Heap da JVM |
 |---|---|---|---|
 | Servidor parado (sem clientes) | 0 | 12 | — |
-| 20 clientes em `/api/public/stream` | 20 | 30, **todas ociosas** (nenhuma presa no Jersey) | — |
-| 300 clientes em `/api/public/stream` | 300 | 35 | ~50 MB (JVM inteira) |
+| 20 clientes em `/api/v1/public/stream` | 20 | 30, **todas ociosas** (nenhuma presa no Jersey) | — |
+| 300 clientes em `/api/v1/public/stream` | 300 | 35 | ~50 MB (JVM inteira) |
 
 Conclusão: **o SSE não prende uma thread por cliente**. As conexões ficam abertas sem ocupar o pool do Jetty,
 então centenas de visitantes simultâneos cabem com folga.
@@ -114,7 +114,7 @@ Limitações do teste:
 | Proxy reverso (nginx) | `proxy_buffering off` | Headers `Upgrade`/`Connection` |
 | Direção | Servidor para cliente | Bidirecional |
 | Manutenção | Código da fork (`SseResource`, `PositionSseListener`, `PublicResource`) | Mantido pelo Traccar oficial |
-| Acesso sem login | `/api/public/stream` | Não existe (o `/api/socket` exige sessão) |
+| Acesso sem login | `/api/v1/public/stream` | Não existe (o `/api/socket` exige sessão) |
 
 A diferença de bytes por mensagem é irrelevante perto do JSON. O que pesa mais é o **tamanho do payload**: um
 `Position` completo tem ~500 a 800 bytes (atributos de protocolo), e o `PublicPosition` do stream público tem
@@ -141,7 +141,7 @@ broadcast do `ConnectionManager` (ver [public-access.md](public-access.md#limita
 
 | Arquivo | Papel |
 |---|---|
-| `src/main/java/org/traccar/api/resource/SseResource.java` | Endpoint `GET /api/sse` (caminho do administrador em `subscribeAdministrator`) |
+| `src/main/java/org/traccar/api/resource/v1/SseResource.java` | Endpoint `GET /api/v1/sse` (caminho do administrador em `subscribeAdministrator`) |
 | `src/main/java/org/traccar/sse/PositionSseListener.java` | `ConnectionManager.UpdateListener` que escreve no `SseEventSink` e se remove quando o cliente desconecta |
 | `src/main/java/org/traccar/api/ApiResourceConfig.java` | Registra o `SseFeature` do Jersey |
 | `build.gradle` | Dependência `org.glassfish.jersey.media:jersey-media-sse` |

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+  logicalFilePath="changelog-sse-1.0.0">
+
+  <!-- Fork (traccar-server-sse): history of the emission and cost parameters, see docs/emissoes.md -->
+  <changeSet author="traccar-server-sse" id="changelog-sse-1.0.0">
+
+    <createTable tableName="tc_emission_factors">
+      <column name="id" type="INT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false" />
+      </column>
+      <column name="parameter" type="VARCHAR(64)">
+        <constraints nullable="false" />
+      </column>
+      <column name="category" type="VARCHAR(128)" />
+      <column name="period" type="VARCHAR(10)">
+        <constraints nullable="false" />
+      </column>
+      <column name="factorValue" type="DOUBLE">
+        <constraints nullable="false" />
+      </column>
+      <column name="source" type="VARCHAR(512)" />
+    </createTable>
+
+    <createIndex tableName="tc_emission_factors" indexName="idx_emission_factors_parameter">
+      <column name="parameter" />
+    </createIndex>
+
+  </changeSet>
+
+</databaseChangeLog>

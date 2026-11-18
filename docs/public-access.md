@@ -58,13 +58,13 @@ A mudança aparece em até `public.cacheTtl` segundos.
 
 | Funcionalidade | Método e rota | Resposta |
 |---|---|---|
-| `devices` | `GET /api/public/devices` | `[{id, name, category, status, lastUpdate}]`, ordenado por nome |
-| `positions` | `GET /api/public/positions` | `[{deviceId, latitude, longitude, speed, course, fixTime}]`, última posição de cada dispositivo público |
-| `stream` | `GET /api/public/stream` | SSE (`text/event-stream`), detalhado abaixo |
+| `devices` | `GET /api/v1/public/devices` | `[{id, name, category, status, lastUpdate}]`, ordenado por nome |
+| `positions` | `GET /api/v1/public/positions` | `[{deviceId, latitude, longitude, speed, course, fixTime}]`, última posição de cada dispositivo público |
+| `stream` | `GET /api/v1/public/stream` | SSE (`text/event-stream`), detalhado abaixo |
 
 `speed` vem em nós (padrão do Traccar) e `course` em graus.
 
-### `GET /api/public/stream`
+### `GET /api/v1/public/stream`
 
 Ao conectar, envia a última posição de cada dispositivo público e depois as atualizações em tempo real.
 
@@ -80,7 +80,7 @@ data: {"id":3,"name":"Circular 01","category":"bus","status":"online","lastUpdat
 
 - Um objeto por evento, não um array.
 - Eventos de alarme (`events`) e `logs` **nunca** são enviados no stream público.
-- No navegador, use `new EventSource('/api/public/stream')`, sem `withCredentials`.
+- No navegador, use `new EventSource('/api/v1/public/stream')`, sem `withCredentials`.
 
 ## Validação das requisições
 
@@ -142,7 +142,7 @@ Para bloquear de vez quem forja cabeçalhos, os dados teriam que exigir login (r
 | `@PublicFeature` | `src/main/java/org/traccar/api/security/PublicFeature.java` | Marca um método de recurso como funcionalidade pública |
 | `SecurityRequestFilter` | `src/main/java/org/traccar/api/security/SecurityRequestFilter.java` | Responde 404 se a funcionalidade estiver desligada e dispensa login se estiver ligada |
 | `PublicAccessService` | `src/main/java/org/traccar/publicaccess/PublicAccessService.java` | Lê a configuração e mantém o cache dos dispositivos públicos |
-| `PublicResource` | `src/main/java/org/traccar/api/resource/PublicResource.java` | Endpoints `/api/public/*` |
+| `PublicResource` | `src/main/java/org/traccar/api/resource/v1/PublicResource.java` | Endpoints `/api/v1/public/*` |
 | `PublicAccessGuard` | `src/main/java/org/traccar/publicaccess/PublicAccessGuard.java` | Valida origem/chave de API e aplica os limites por IP nas requisições anônimas |
 | `PublicSseListener` | `src/main/java/org/traccar/publicaccess/PublicSseListener.java` | Filtra as atualizações do stream público |
 | `ConnectionManager` (alterado) | `src/main/java/org/traccar/session/ConnectionManager.java` | `addGlobalListener`/`removeGlobalListener`: recebem atualizações de todos os dispositivos, e o listener filtra |
@@ -161,7 +161,7 @@ Para bloquear de vez quem forja cabeçalhos, os dados teriam que exigir login (r
 
 ## Limitações conhecidas
 
-- A lista de dispositivos públicos fica em cache por `public.cacheTtl`. O `status` em `/api/public/devices` pode
+- A lista de dispositivos públicos fica em cache por `public.cacheTtl`. O `status` em `/api/v1/public/devices` pode
   ficar defasado até esse tempo, enquanto o stream envia mudanças de status na hora.
 - O recarregamento do cache pode acontecer dentro do broadcast do `ConnectionManager` (consulta ao banco a cada
   `cacheTtl`). Para frotas pequenas isso é irrelevante. Se virar gargalo, troque por um refresh agendado.

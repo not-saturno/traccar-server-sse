@@ -106,11 +106,11 @@ Com o **OsmAnd** (HTTP), para testes rápidos:
 
 ### Testar rotas públicas com curl
 
-As rotas `/api/public/*` recusam requisição sem origem (`403`, ver
+As rotas `/api/v1/public/*` recusam requisição sem origem (`403`, ver
 [public-access.md](public-access.md#validação-das-requisições)). Mande a origem do front:
 
 ```bash
-curl -H 'Origin: http://localhost:5173' http://localhost:5173/api/public/devices
+curl -H 'Origin: http://localhost:5173' http://localhost:5173/api/v1/public/devices
 ```
 
 ### Hot reload não funciona?
