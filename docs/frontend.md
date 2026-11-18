@@ -80,7 +80,7 @@ Ponto de quebra: `md` (768px).
 | Tela | Celular | Desktop |
 |---|---|---|
 | Mapa (`/`) | Mapa em tela cheia. A lista abre como bottom sheet (60% da altura) pelo botão **Ônibus (n)** ou pelo menu, e fecha no X ou ao tocar no mapa. Entrar, configurações e sair ficam na barra superior | Painel lateral com a lista e atalhos |
-| `/settings/*` | Barra superior (voltar ao mapa + seção atual) e abas fixas embaixo: Relatórios, Novo, Dispositivos, Logs, Conta (administrador: também Usuários e Fatores) | Menu lateral (`w-64`) |
+| `/settings/*` | Barra superior (voltar ao mapa + seção atual) e abas fixas embaixo: Relatórios, Novo, Dispositivos, Logs, Conta (administrador: também Usuários e Fatores); com muitos itens a barra rola na horizontal (largura mínima por item) e centraliza o item da página aberta | Menu lateral (`w-64`) |
 | Dispositivos | Cards com editar/excluir | Tabela paginada |
 | Formulários | Uma coluna, botões em largura total e empilhados | Duas colunas onde couber |
 
@@ -234,8 +234,33 @@ navegador com constantes fixas no código.
 ### Fatores de emissão (`/settings/emission-factors`)
 
 Tela do administrador para o histórico dos parâmetros (ver [emissoes.md](emissoes.md)): cadastrar um valor por
-ano, mês ou dia, opcionalmente só para uma categoria, com a fonte; editar e excluir. Mostra também os valores
-padrão, usados antes do primeiro valor cadastrado.
+ano, mês ou dia, opcionalmente só para uma categoria, com a fonte; editar e excluir. Seções, de cima para baixo:
+
+- **Como funciona** (botão no topo; aberta por padrão, a escolha fica salva em `localStorage` `factors.helpOpen`):
+  as cinco regras de vigência com exemplos. O valor continua depois do período. O período mais específico ganha. O
+  valor de categoria ganha do de "todas" e continua valendo para ela mesmo depois de um valor novo de "todas". Antes
+  do primeiro registro vale o padrão. A mudança vale na hora, inclusive para o passado.
+- **Formulário** (Novo valor, Editar ou **Incluir** na linha do tempo de um parâmetro, que já vem com o parâmetro
+  escolhido):
+  - dica abaixo de cada campo;
+  - ao escolher o parâmetro, um quadro com o que ele é, onde achar o valor, onde entra no relatório e o padrão
+    (`src/data/emissionHelp.ts`);
+  - aviso quando o valor fica mais de 5 vezes acima ou abaixo do padrão (provável erro de unidade ou vírgula);
+  - aviso de conflito com um registro do mesmo parâmetro, período e categoria, com link para editá-lo (o botão
+    salvar fica desabilitado);
+  - **prévia "Onde este valor vai valer"**: as datas exatas em que o valor será usado, o que valia antes, o que
+    volta a valer depois e as categorias com valor próprio que não usam o valor de "todas" (ou só usam em parte).
+- **Ver valores para / Em vigor no dia**: escolha da categoria e da data das duas seções seguintes.
+- **Em vigor**: o valor de cada parâmetro naquele dia e naquela categoria, com origem (registro e fonte, ou
+  padrão).
+- **Linha do tempo**: por parâmetro, os intervalos e o valor usado em cada um, já com as regras aplicadas (um mês
+  dentro de um ano aparece como trecho próprio), mais recente em cima.
+- **Registros cadastrados** (todas as categorias, com editar e excluir) e **valores padrão**.
+
+As regras de vigência rodam no navegador (`src/utils/emissionFactors.ts`) para a linha do tempo e a prévia, iguais
+às do servidor (`EmissionFactorResolver`). Conferido em 2026-11-18: 432 combinações de data, categoria e
+parâmetro comparadas com `GET /api/v1/emission-factors/effective`, nenhuma diferença. Se as regras mudarem no
+servidor, mude também esse arquivo. O cálculo dos relatórios continua só no servidor.
 
 ### Removido: login automático com credenciais embutidas
 

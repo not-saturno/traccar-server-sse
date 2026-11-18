@@ -229,6 +229,8 @@ não mudam.
 | `schema/changelog-sse-1.0.0.xml` | Tabela `tc_emission_factors` |
 | `traccar-web/src/api/emissions.ts` | Cliente do front |
 | `traccar-web/src/pages/settings/reports.vue` | Tela de relatórios (só desenha) |
-| `traccar-web/src/pages/settings/emission-factors.vue` | Tela do histórico (administrador) |
+| `traccar-web/src/pages/settings/emission-factors.vue` | Tela do histórico (administrador): ajuda, formulário com dicas e prévia, valores em vigor, linha do tempo |
+| `traccar-web/src/utils/emissionFactors.ts` | Regras de vigência no navegador (iguais ao `EmissionFactorResolver`), para a linha do tempo e a prévia |
+| `traccar-web/src/data/emissionHelp.ts` | Dicas de cada parâmetro (o que é, onde achar, onde entra no cálculo) |
 
 Testes: `EmissionFactorResolverTest`, `HourlyDistanceTest`, `EmissionReportServiceTest`.

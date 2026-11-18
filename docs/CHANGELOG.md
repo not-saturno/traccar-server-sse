@@ -5,6 +5,11 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- Front, tela **Fatores**: seção "Como funciona" com as regras de vigência, dicas em cada campo e por parâmetro
+  (o que é, onde achar, onde entra no relatório), aviso de valor fora da escala do padrão e de conflito com
+  registro existente, prévia de onde o valor vai valer (antes, durante, depois e categorias com valor próprio),
+  valores em vigor por dia e categoria e linha do tempo por parâmetro. Regras de vigência no navegador iguais às do
+  servidor. Ver [frontend.md](frontend.md#fatores-de-emissão-settingsemission-factors).
 - Relatórios de emissão, consumo e custo calculados no servidor (BFF): `GET /api/v1/reports/emissions/fleet`,
   `/monthly` e `/instant`. O front deixou de baixar todas as posições do ano de cada dispositivo e de calcular no
   navegador; recebe as linhas prontas (mês ou hora), o resumo dos cards, o trajeto afinado (até 2000 pontos) e o
@@ -130,6 +135,8 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
   "Criar conta" segue a mesma regra.
 
 ### Corrigido
+- Front: no celular, com 7 abas (administrador), os nomes das abas da barra inferior ficavam cortados. Agora cada
+  aba tem largura mínima, a barra rola na horizontal e centraliza a aba da página aberta.
 - Front: erro de login (senha errada, campos vazios, usuário desativado, sem conexão) não aparecia: a página
   chamava um toast sem `<Toast />` montado. Agora a mensagem fica no formulário.
 - Caddy: `ERR_SSL_PROTOCOL_ERROR` ao abrir `https://<IP>` com `TLS_MODE=ip`/`internal` no Docker. Sem SNI (que
