@@ -91,7 +91,8 @@ Detalhes em [imagem-docker.md](imagem-docker.md#certificado-sem-domínio-só-ip)
 | `reverse_proxy traccar:8082` | Front, API, SSE, WebSocket e OsmAnd via HTTPS (`POST /`) |
 | Sem `encode` | O Traccar já comprime. Comprimir o SSE no proxy atrasaria os eventos |
 | `header_up -CF-Connecting-IP` e `header_up X-Real-IP {remote_host}` | O Traccar lê esses headers antes do `X-Forwarded-For`. Sem isso, o cliente falsificaria o próprio IP |
-| `header_down Set-Cookie ... Secure` | O Traccar não marca o cookie de sessão como `Secure` atrás de proxy TLS |
+| `header_down Set-Cookie ... Secure` | O Traccar não marca o cookie de sessão como `Secure` atrás de proxy TLS. Remove um `Secure` existente antes, para não duplicar com `web.sameSiteCookie=None` |
+| Nada de CORS | O Traccar responde o CORS (`web.origin`). Headers `Access-Control-*` no Caddy duplicariam os do Traccar e o navegador recusaria |
 | `request_body max_size 10MB` | Upload de imagens de dispositivo |
 
 **Renovação e volumes**
@@ -167,7 +168,9 @@ Entradas de `traccar.xml` relevantes atrás do proxy. O compose usa `docker/comp
 | `database.registerUnknown` | `false` | Não cadastrar automaticamente rastreadores desconhecidos |
 | `database.*` | H2 (padrão) ou MySQL/PostgreSQL | O H2 em arquivo serve para poucos ônibus. Para volume maior, use MySQL ou PostgreSQL (exemplo em `docker/compose/traccar-mysql.yaml`) |
 
-`web.origin` e `web.sameSiteCookie` não são necessários quando front e API estão no mesmo domínio.
+`web.origin` e `web.sameSiteCookie` não são necessários quando front e API estão no mesmo domínio. O
+`docker/compose/traccar-sse.xml` já libera `http://localhost:8000` e `https://ceamazon.com.br` para outros fronts
+(ver [public-access.md](public-access.md#liberando-outros-fronts-cors)).
 
 ## nginx: o que o template faz
 

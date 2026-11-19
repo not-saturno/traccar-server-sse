@@ -15,6 +15,7 @@ git merge --no-ff upstream/master
 | `src/main/java/org/traccar/web/WebServer.java` | Manter o upstream. A configuração do Jersey fica em `ApiResourceConfig` |
 | `src/main/java/org/traccar/api/ApiResourceConfig.java` | Manter o upstream e registrar `SseFeature.class` |
 | `src/main/java/org/traccar/session/ConnectionManager.java` | Manter o upstream e reaplicar: log de assinatura SSE, `globalListeners` (inclusive em `updateLog`, para os logs do administrador) e iteração sobre `List.copyOf(...)` |
+| `src/main/java/org/traccar/api/CorsResponseFilter.java` | Manter o upstream e reaplicar a lista de origens com comparação exata (`web.origin` separado por vírgula, sem `contains`). Teste: `CorsResponseFilterTest` |
 | `src/main/java/org/traccar/api/security/SecurityRequestFilter.java` | Manter o upstream e reaplicar o bloco `@PublicFeature` |
 | `src/main/java/org/traccar/ProcessingHandler.java` | Manter o upstream e reaplicar a medição de tempos (`ProcessingTimings`: `Times` no `QueuedPosition`, `receivedAt`, `handleTimed`, registros em `processEventHandlers` e `finishedProcessing`). Ver [processamento.md](processamento.md) |
 | `src/main/java/org/traccar/model/LogRecord.java` | Manter o upstream e reaplicar o campo `time` (`getTime()`) |

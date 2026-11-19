@@ -5,6 +5,9 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
 ## [Não lançado] — branch `feat/public-access`
 
 ### Adicionado
+- `web.origin` aceita uma lista de origens separada por vírgula. `docker/compose/traccar-sse.xml` e `debug.xml`
+  liberam `http://localhost:8000` e `https://ceamazon.com.br`. Ver
+  [public-access.md](public-access.md#liberando-outros-fronts-cors).
 - Front, tela **Fatores**: seção "Como funciona" com as regras de vigência, dicas em cada campo e por parâmetro
   (o que é, onde achar, onde entra no relatório), aviso de valor fora da escala do padrão e de conflito com
   registro existente, prévia de onde o valor vai valer (antes, durante, depois e categorias com valor próprio),
@@ -135,6 +138,10 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
   "Criar conta" segue a mesma regra.
 
 ### Corrigido
+- Caddy: com `web.sameSiteCookie=None`, o cookie de sessão saía com `Secure` duplicado. O `Caddyfile` remove o
+  `Secure` existente antes de acrescentar.
+- CORS: o `CorsResponseFilter` liberava qualquer origem contida no texto de `web.origin` (`https://ceamazon.com`
+  passava por `https://ceamazon.com.br`, com credenciais). Agora a comparação é exata.
 - Front: no celular, com 7 abas (administrador), os nomes das abas da barra inferior ficavam cortados. Agora cada
   aba tem largura mínima, a barra rola na horizontal e centraliza a aba da página aberta.
 - Front: erro de login (senha errada, campos vazios, usuário desativado, sem conexão) não aparecia: a página

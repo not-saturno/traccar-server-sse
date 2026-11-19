@@ -55,7 +55,9 @@
 		header_up -CF-Connecting-IP
 		header_up X-Real-IP {remote_host}
 
-		# Traccar does not mark the session cookie as Secure behind a TLS proxy
+		# Traccar does not mark the session cookie as Secure behind a TLS proxy. With web.sameSiteCookie=None it
+		# already does, so drop any Secure first and add it once
+		header_down Set-Cookie "; Secure" ""
 		header_down Set-Cookie "^(JSESSIONID=.*)$" "$1; Secure"
 	}
 }

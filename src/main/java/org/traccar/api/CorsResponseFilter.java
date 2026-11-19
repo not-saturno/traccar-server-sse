@@ -25,15 +25,32 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Singleton
 public class CorsResponseFilter implements ContainerResponseFilter {
 
-    private final String allowed;
+    private final Set<String> allowed;
 
     @Inject
     public CorsResponseFilter(Config config) {
-        allowed = config.getString(Keys.WEB_ORIGIN);
+        // fork: web.origin may list several origins (comma or space separated), matched exactly
+        String value = config.getString(Keys.WEB_ORIGIN);
+        allowed = value == null ? Set.of() : Arrays.stream(value.split("[,\\s]+"))
+                .map(CorsResponseFilter::normalize)
+                .filter(origin -> !origin.isEmpty())
+                .collect(Collectors.toSet());
+    }
+
+    private static String normalize(String origin) {
+        String value = origin.trim().toLowerCase(Locale.ROOT);
+        while (value.endsWith("/")) {
+            value = value.substring(0, value.length() - 1);
+        }
+        return value;
     }
 
     private static final String ORIGIN_ALL = "*";
@@ -58,7 +75,7 @@ public class CorsResponseFilter implements ContainerResponseFilter {
             String origin = request.getHeaderString(HttpHeaderNames.ORIGIN.toString());
             if (origin == null) {
                 response.getHeaders().add(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString(), ORIGIN_ALL);
-            } else if (allowed != null && (allowed.equals(ORIGIN_ALL) || allowed.contains(origin))) {
+            } else if (allowed.contains(ORIGIN_ALL) || allowed.contains(normalize(origin))) {
                 response.getHeaders().add(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString(), origin);
             }
         }

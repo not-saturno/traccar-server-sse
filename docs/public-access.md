@@ -29,8 +29,8 @@ visitantes, e manter todo o resto protegido.
 <!-- cache da lista de dispositivos públicos, em segundos (padrão: 30) -->
 <entry key='public.cacheTtl'>30</entry>
 
-<!-- se o front estiver em OUTRO domínio, libere a origem (CORS) -->
-<entry key='web.origin'>https://onibus.exemplo.ufpa.br</entry>
+<!-- outros fronts que chamam a API pelo navegador (CORS), separados por vírgula -->
+<entry key='web.origin'>http://localhost:8000,https://ceamazon.com.br</entry>
 ```
 
 | Chave | Tipo | Padrão | Descrição |
@@ -103,6 +103,7 @@ do Vite envia o `Host` original em `X-Forwarded-Host`.
 
 | Chave | Padrão | Descrição |
 |---|---|---|
+| `web.origin` | — | Origens de outros fronts liberadas no CORS de **toda** a API (com credenciais) e também nas rotas públicas. Lista separada por vírgula, comparação exata (esquema + host + porta). `*` libera qualquer origem no CORS |
 | `public.allowedOrigins` | — | Origens extras autorizadas (ex.: `https://outro-front.ufpa.br`), separadas por vírgula. `*` desliga a checagem de origem |
 | `public.requireOrigin` | `true` | Recusa requisições sem `Origin` e sem `Referer` |
 | `public.apiKeys` | — | Chaves para apps autorizados, separadas por vírgula. Gere com `openssl rand -hex 24` |
@@ -112,6 +113,46 @@ do Vite envia o `Host` original em `X-Forwarded-Host`.
 Os limites por IP são altos de propósito. Muitos usuários podem sair pelo mesmo IP (NAT da rede do campus ou da
 operadora de celular), e um stream fechado só libera a vaga no próximo keepalive (até 55 s). Ajuste com base no
 uso real.
+
+### Liberando outros fronts (CORS)
+
+Exemplo em uso: front local em `http://localhost:8000` e o site `https://ceamazon.com.br`.
+
+```xml
+<entry key='web.origin'>http://localhost:8000,https://ceamazon.com.br</entry>
+```
+
+- A origem é `esquema://host[:porta]`, sem caminho e sem `/` no fim. `https://www.ceamazon.com.br` é outra origem:
+  se o site também responder com `www`, inclua as duas.
+- A comparação é exata. O `CorsResponseFilter` do upstream comparava por trecho de texto (`contains`), então
+  liberar `https://ceamazon.com.br` também liberava `https://ceamazon.com`, que é outro domínio, com credenciais.
+  A fork corrigiu isso (`CorsResponseFilterTest`).
+- As rotas públicas (`/api/v1/public/*`) aceitam as mesmas origens, sem precisar repetir em `public.allowedOrigins`.
+- **Login a partir desses fronts.** Para o cookie de sessão ir junto nas chamadas de outro site, adicione
+  `web.sameSiteCookie=None`, que exige o servidor em HTTPS. O Safari e navegadores com bloqueio de cookies de
+  terceiros podem recusar o cookie mesmo assim. Só para o mapa público, isso não é necessário.
+- Do lado do front, `fetch` com `credentials: 'include'` e `EventSource` com `withCredentials: true` só são
+  necessários quando há login.
+
+**Atrás do Caddy (produção).** Quem responde o CORS é o Traccar. O Caddy repassa o `Origin`, o preflight
+`OPTIONS` e os headers `Access-Control-*` sem alterar, então não há nada de CORS no `Caddyfile` (e não deve
+haver: dois `Access-Control-Allow-Origin` na mesma resposta fazem o navegador recusar). Ao mudar `web.origin`,
+basta reiniciar o Traccar (`docker compose -f docker/compose/traccar-sse-caddy.yaml restart traccar`).
+
+A sessão fica presa à origem do login (regra do Traccar): quem entrou por `https://ceamazon.com.br` só usa o
+cookie a partir dessa origem. A mesma sessão chamada de `http://localhost:8000` recebe `401`.
+
+Testado em 2026-11-19, direto no Traccar e via Caddy (`traccar-sse-caddy.yaml`, `TLS_MODE=internal`):
+
+| Teste | Resultado |
+|---|---|
+| `GET /api/server` com `Origin` `http://localhost:8000` ou `https://ceamazon.com.br` | Um único `Access-Control-Allow-Origin` com a origem |
+| Preflight `OPTIONS /api/session` de `https://ceamazon.com.br` | 200, com origem, credenciais, métodos e headers |
+| `https://ceamazon.com`, `http://localhost:80`, outros domínios | Sem header CORS. Rotas públicas: `403` |
+| `/api/v1/public/devices` e `/api/v1/public/stream` dos dois fronts | 200 (`text/event-stream` no stream) |
+| Login de `https://ceamazon.com.br` com `web.sameSiteCookie=None` | Cookie `HttpOnly; SameSite=None; Secure` |
+| `/api/devices` e `/api/v1/sse` com esse cookie, de `https://ceamazon.com.br` | 200 |
+| Mesmo cookie a partir de `http://localhost:8000` | 401 |
 
 ### O que isso garante (e o que não)
 

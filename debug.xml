@@ -9,6 +9,7 @@
     <entry key='web.mcp.enable'>true</entry>
 
     <entry key='public.enable'>true</entry>
+    <entry key='web.origin'>http://localhost:8000,https://ceamazon.com.br</entry>
 
     <entry key='geocoder.type'>pluscodes</entry>
 
