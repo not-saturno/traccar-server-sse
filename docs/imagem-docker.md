@@ -64,6 +64,36 @@ Opções (variáveis de ambiente):
 > A imagem precisa ser da **mesma arquitetura do servidor**. Gerada num PC x86 e levada para um servidor ARM,
 > ela não roda: use `PLATFORM=linux/arm64`.
 
+### Servidor ARM
+
+1. No servidor, veja a arquitetura: `uname -m`. `aarch64` = `linux/arm64` (Oracle Ampere, AWS Graviton,
+   Raspberry Pi com sistema 64 bits). `armv7l` = sistema 32 bits, que não foi testado.
+2. No PC de build (x86), gere a imagem para ARM numa pasta separada, para não misturar com a exportação x86:
+
+   ```bash
+   PLATFORM=linux/arm64 OUTPUT_DIR=dist/docker-arm64 setup/docker-export.sh
+   ```
+
+   O script mostra a arquitetura no fim do build (`Tagged traccar-sse:<versão> and latest (linux/arm64)`).
+3. No servidor, o resto é igual (`docker load` e `docker compose ... up -d`). O `caddy:2-alpine` é multiarquitetura
+   e o Docker do servidor baixa a versão ARM sozinho. Depois do `docker load`, confira:
+
+   ```bash
+   docker image inspect --format '{{.Architecture}}' traccar-sse:latest   # arm64
+   ```
+
+Como funciona o build cruzado:
+
+- O Docker Desktop já traz o emulador (QEMU) para montar imagens ARM num PC x86. No Docker Engine do Linux,
+  instale antes: `docker run --privileged --rm tonistiigi/binfmt --install arm64`.
+- O front (JS) e o backend (`.jar`) não dependem do processador, então o `Dockerfile.sse` compila os dois na
+  arquitetura do PC (`--platform=$BUILDPLATFORM`). Só o `jlink`, que copia os binários nativos da JVM, e a imagem
+  final rodam como ARM. Compilar npm e Gradle sob emulação levaria muito mais tempo.
+- O `docker save` recebe `--platform` junto, para exportar só a variante ARM.
+- O build também troca a `traccar-sse:latest` **local** do PC pela versão ARM. Para voltar a rodar localmente,
+  gere de novo sem `PLATFORM`.
+- Erro `exec format error` no servidor = imagem de outra arquitetura. Gere de novo com o `PLATFORM` certo.
+
 ## No servidor
 
 1. Copie a pasta inteira:

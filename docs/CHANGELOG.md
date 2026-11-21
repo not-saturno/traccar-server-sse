@@ -115,6 +115,10 @@ Formato: mais recente primeiro. Datas em AAAA-MM-DD.
   `docker/compose/traccar-sse-caddy.yaml`. Passa a ser o caminho recomendado em [deploy.md](deploy.md).
 
 ### Alterado
+- `docker/Dockerfile.sse` compila front e backend na arquitetura da máquina de build (`$BUILDPLATFORM`); só o
+  `jlink` e a imagem final usam a arquitetura alvo. O build ARM num PC x86 não roda npm e Gradle sob emulação.
+  `setup/docker-export.sh` exporta só a plataforma pedida (`docker save --platform`) e mostra a arquitetura da
+  imagem. Ver [imagem-docker.md](imagem-docker.md#servidor-arm).
 - **Rotas da fork movidas para `/api/v1`**, separadas da API original do Traccar: `/api/sse` → `/api/v1/sse`,
   `/api/public/*` → `/api/v1/public/*`, `/api/processing/timings` → `/api/v1/processing/timings`. As rotas antigas
   respondem 404 (sem alias). Recursos no pacote `org.traccar.api.resource.v1`; front e bloco SSE do nginx

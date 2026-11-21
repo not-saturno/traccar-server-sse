@@ -88,7 +88,7 @@ else
   fi
   docker build "${BUILD_ARGS[@]}" .
 fi
-ok "Tagged $IMAGE:$VERSION and $IMAGE:latest"
+ok "Tagged $IMAGE:$VERSION and $IMAGE:latest ($(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$IMAGE:$VERSION"))"
 
 # Same layout as the repository (compose/ next to caddy/), so ../caddy/Caddyfile in the compose file works
 IMAGES_DIR="$OUTPUT_DIR/images"
@@ -98,7 +98,11 @@ LATEST="$IMAGES_DIR/$IMAGE-latest.tar.gz"
 
 info "Exporting to $ARCHIVE"
 # both tags in one file: docker load restores $VERSION and moves latest to this image
-docker save "$IMAGE:$VERSION" "$IMAGE:latest" | gzip > "$ARCHIVE.part"
+SAVE_ARGS=()
+if [[ -n $PLATFORM ]]; then
+  SAVE_ARGS+=(--platform "$PLATFORM")
+fi
+docker save ${SAVE_ARGS[@]+"${SAVE_ARGS[@]}"} "$IMAGE:$VERSION" "$IMAGE:latest" | gzip > "$ARCHIVE.part"
 mv "$ARCHIVE.part" "$ARCHIVE"
 (cd "$IMAGES_DIR" && sha256sum "$(basename "$ARCHIVE")" > "$(basename "$ARCHIVE").sha256")
 

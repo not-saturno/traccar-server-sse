@@ -2,20 +2,25 @@
 # Build from the repository root, with the traccar-web submodule initialized:
 #   docker build -f docker/Dockerfile.sse -t traccar-sse .
 
-FROM node:22-alpine AS front
+# The front (JS) and the backend (jar) do not depend on the CPU, so they build on the build machine's own
+# architecture ($BUILDPLATFORM) even when targeting another one (PLATFORM=linux/arm64 in setup/docker-export.sh).
+# Only the jlink runtime and the final image use the target architecture, which avoids running npm and Gradle
+# under emulation.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS front
 WORKDIR /front
 COPY traccar-web/package.json traccar-web/package-lock.json ./
 RUN npm ci
 COPY traccar-web/ ./
 RUN npm run build
 
-FROM eclipse-temurin:21-jdk AS backend
+FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jdk AS backend
 WORKDIR /build
 COPY gradlew build.gradle settings.gradle openapi.yaml ./
 COPY gradle gradle
 COPY src src
 RUN ./gradlew --no-daemon assemble
 
+# Target architecture: jlink copies the native JVM binaries
 FROM eclipse-temurin:21-jdk AS jre
 # Extra runtime modules, comma-prefixed. The dev compose adds ",jdk.jdwp.agent" for the debugger
 ARG EXTRA_MODULES=""
